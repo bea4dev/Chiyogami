@@ -1,0 +1,95 @@
+diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+--- Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-08-21 18:25:00.820829800 +0900
++++ Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-08-21 20:20:21.097663400 +0900
+@@ -61,6 +61,8 @@
+     private final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
+     private boolean useTimings = false;
+     private File pluginsDirectory; public @Nullable File pluginsDirectory() { return this.pluginsDirectory; } // Paper
++    
++    private final Object EVENT_LOCK = new Object(); // Chiyogami
+ 
+     public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
+         server = instance;
+@@ -605,44 +607,46 @@
+      */
+     @Override
+     public void callEvent(@NotNull Event event) {
+-        // Paper - replace callEvent by merging to below method
+-        if (event.isAsynchronous() && server.isPrimaryThread()) {
+-            throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
+-        } else if (!event.isAsynchronous() && !server.isPrimaryThread() && !server.isStopping() ) {
+-            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+-        }
+-
+-        HandlerList handlers = event.getHandlers();
+-        RegisteredListener[] listeners = handlers.getRegisteredListeners();
+-
+-        for (RegisteredListener registration : listeners) {
+-            if (!registration.getPlugin().isEnabled()) {
+-                continue;
+-            }
+-
+-            try {
+-                registration.callEvent(event);
+-            } catch (AuthorNagException ex) {
+-                Plugin plugin = registration.getPlugin();
+-
+-                if (plugin.isNaggable()) {
+-                    plugin.setNaggable(false);
+-
+-                    server.getLogger().log(Level.SEVERE, String.format(
+-                            "Nag author(s): '%s' of '%s' about the following: %s",
+-                            plugin.getDescription().getAuthors(),
+-                            plugin.getDescription().getFullName(),
+-                            ex.getMessage()
+-                            ));
++        synchronized (EVENT_LOCK) {
++            // Paper - replace callEvent by merging to below method
++            if (event.isAsynchronous() && server.isPrimaryThread()) {
++                throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
++            } else if (!event.isAsynchronous() && !server.isPrimaryThread() && !server.isStopping()) {
++                throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
++            }
++    
++            HandlerList handlers = event.getHandlers();
++            RegisteredListener[] listeners = handlers.getRegisteredListeners();
++    
++            for (RegisteredListener registration : listeners) {
++                if (!registration.getPlugin().isEnabled()) {
++                    continue;
+                 }
+-            } catch (Throwable ex) {
+-                // Paper start - error reporting
+-                String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
+-                server.getLogger().log(Level.SEVERE, msg, ex);
+-                if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
+-                    callEvent(new ServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
++        
++                try {
++                    registration.callEvent(event);
++                } catch (AuthorNagException ex) {
++                    Plugin plugin = registration.getPlugin();
++            
++                    if (plugin.isNaggable()) {
++                        plugin.setNaggable(false);
++                
++                        server.getLogger().log(Level.SEVERE, String.format(
++                                "Nag author(s): '%s' of '%s' about the following: %s",
++                                plugin.getDescription().getAuthors(),
++                                plugin.getDescription().getFullName(),
++                                ex.getMessage()
++                        ));
++                    }
++                } catch (Throwable ex) {
++                    // Paper start - error reporting
++                    String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
++                    server.getLogger().log(Level.SEVERE, msg, ex);
++                    if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
++                        callEvent(new ServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
++                    }
++                    // Paper end
+                 }
+-                // Paper end
+             }
+         }
+     }
