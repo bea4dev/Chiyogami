@@ -1,0 +1,474 @@
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java
+--- Original/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java	2021-08-22 21:29:59.783266700 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java	2021-08-22 22:05:38.091178700 +0900
+@@ -104,6 +104,7 @@
+ import org.apache.logging.log4j.Logger;
+ 
+ import org.bukkit.entity.Player; // CraftBukkit
++import org.spigotmc.AsyncCatcher;
+ 
+ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider {
+ 
+@@ -591,7 +592,7 @@
+         }
+     }
+     public Long2ObjectLinkedOpenHashMap<ChunkHolder> getVisibleChunks() {
+-        if (Thread.currentThread() == this.level.thread) {
++        if (!AsyncCatcher.isAsync()) {
+             return this.visibleChunkMap;
+         } else {
+             synchronized (this.visibleChunkMap) {
+@@ -608,7 +609,7 @@
+     @Nullable
+     public ChunkHolder getVisibleChunkIfPresent(long pos) {
+         // Paper start - mt safe get
+-        if (Thread.currentThread() != this.level.thread) {
++        if (AsyncCatcher.isAsync()) {
+             synchronized (this.visibleChunkMap) {
+                 return (ChunkHolder) (this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.get(pos) : ((ProtectedVisibleChunksMap)this.visibleChunkMap).safeGet(pos));
+             }
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+--- Original/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java	2021-08-22 21:29:53.475034400 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java	2021-08-22 22:05:38.100173900 +0900
+@@ -45,6 +45,7 @@
+ import net.minecraft.world.level.storage.LevelData;
+ import net.minecraft.world.level.storage.LevelStorageSource;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
++import org.spigotmc.AsyncCatcher;
+ 
+ public class ServerChunkCache extends ChunkSource {
+ 
+@@ -141,7 +142,7 @@
+     private long chunkFutureAwaitCounter;
+ 
+     public void getEntityTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             this.mainThreadProcessor.execute(() -> {
+                 ServerChunkCache.this.getEntityTickingChunkAsync(x, z, onLoad);
+             });
+@@ -151,7 +152,7 @@
+     }
+ 
+     public void getTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             this.mainThreadProcessor.execute(() -> {
+                 ServerChunkCache.this.getTickingChunkAsync(x, z, onLoad);
+             });
+@@ -161,7 +162,7 @@
+     }
+ 
+     public void getFullChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             this.mainThreadProcessor.execute(() -> {
+                 ServerChunkCache.this.getFullChunkAsync(x, z, onLoad);
+             });
+@@ -171,7 +172,7 @@
+     }
+ 
+     private void getChunkFutureAsynchronously(int x, int z, int ticketLevel, Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>> futureGet, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             throw new IllegalStateException();
+         }
+         ChunkPos chunkPos = new ChunkPos(x, z);
+@@ -312,7 +313,7 @@
+     public LevelChunk getChunkAtIfLoadedImmediately(int x, int z) {
+         long k = ChunkPos.asLong(x, z);
+ 
+-        if (Thread.currentThread() == this.mainThread) {
++        if (!AsyncCatcher.isAsync()) {
+             return this.getChunkAtIfLoadedMainThread(x, z);
+         }
+ 
+@@ -348,7 +349,7 @@
+     private long asyncLoadSeqCounter;
+ 
+     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkAtAsynchronously(int x, int z, boolean gen, boolean isUrgent) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = new CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>();
+             this.mainThreadProcessor.execute(() -> {
+                 this.getChunkAtAsynchronously(x, z, gen, isUrgent).whenComplete((chunk, ex) -> {
+@@ -457,7 +458,7 @@
+     @Override
+     public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
+         final int x1 = x; final int z1 = z; // Paper - conflict on variable change
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             return (ChunkAccess) CompletableFuture.supplyAsync(() -> {
+                 return this.getChunk(x, z, leastStatus, create);
+             }, this.mainThreadProcessor).join();
+@@ -517,7 +518,7 @@
+     @Nullable
+     @Override
+     public LevelChunk getChunkNow(int chunkX, int chunkZ) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             return null;
+         } else {
+             return this.getChunkAtIfLoadedMainThread(chunkX, chunkZ); // Paper - optimise for loaded chunks
+@@ -531,7 +532,7 @@
+     }
+ 
+     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFuture(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
+-        boolean flag1 = Thread.currentThread() == this.mainThread;
++        boolean flag1 = !AsyncCatcher.isAsync();
+         CompletableFuture completablefuture;
+ 
+         if (flag1) {
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java
+--- Original/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-08-22 21:29:43.175229700 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-08-22 22:05:38.168134200 +0900
+@@ -320,7 +320,7 @@
+      * @return
+      */
+     public static void ensureMain(String reason, Runnable run) {
+-        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread) {
++        if (AsyncCatcher.enabled && AsyncCatcher.isAsync()) {
+             if (reason != null) {
+                 new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
+             }
+@@ -345,7 +345,7 @@
+      * @return
+      */
+     public static <T> T ensureMain(String reason, Supplier<T> run) {
+-        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread) {
++        if (AsyncCatcher.enabled && AsyncCatcher.isAsync()) {
+             if (reason != null) {
+                 new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
+             }
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java
+--- Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-22 21:29:57.318730900 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-22 22:16:59.158037800 +0900
+@@ -31,21 +31,8 @@
+ import java.nio.file.Path;
+ import java.security.KeyPair;
+ import java.text.SimpleDateFormat;
+-import java.util.Arrays;
+-import java.util.Base64;
+-import java.util.Collection;
+-import java.util.Collections;
+-import java.util.Comparator;
+-import java.util.Date;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Map;
++import java.util.*;
+ import java.util.Map.Entry;
+-import java.util.Objects;
+-import java.util.Optional;
+-import java.util.Random;
+-import java.util.Set;
+-import java.util.UUID;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Executor;
+ import java.util.concurrent.atomic.AtomicReference;
+@@ -185,6 +172,7 @@
+ // CraftBukkit end
+ 
+ import co.aikar.timings.MinecraftTimings; // Paper
++import org.spigotmc.AsyncCatcher;
+ import org.spigotmc.SlackActivityAccountant; // Spigot
+ 
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements SnooperPopulator, CommandSource, AutoCloseable {
+@@ -306,6 +294,8 @@
+     public final double[] recentTps = new double[ 3 ];
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
++    
++    public final Set<Thread> worldServerThreads = new HashSet<>(); // Chiyogami
+ 
+     public volatile Thread shutdownThread; // Paper
+     public volatile boolean abnormalExit = false; // Paper
+@@ -1287,7 +1277,7 @@
+     public int midTickChunksTasksRan = 0;
+     private long midTickLastRan = 0;
+     public void midTickLoadChunks() {
+-        if (!isSameThread() || System.nanoTime() - midTickLastRan < 1000000) {
++        if (Thread.currentThread() != this.serverThread || System.nanoTime() - midTickLastRan < 1000000) {
+             // only check once per 0.25ms incase this code is called in a hot method
+             return;
+         }
+@@ -1530,13 +1520,15 @@
+ 
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
+-            worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+-            worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+-            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
+-
+-            this.profiler.push(() -> {
+-                return worldserver + " " + worldserver.dimension().location();
+-            });
++            
++            Thread worldServerThread = new Thread(() -> {
++                worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
++                worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
++                net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
++    
++                this.profiler.push(() -> {
++                    return worldserver + " " + worldserver.dimension().location();
++                });
+             /* Drop global time updates
+             if (this.tickCount % 20 == 0) {
+                 this.profiler.enter("timeSync");
+@@ -1544,34 +1536,49 @@
+                 this.profiler.exit();
+             }
+             // CraftBukkit end */
+-
+-            this.profiler.push("tick");
+-
+-            try {
+-                midTickLoadChunks(); // Paper
+-                worldserver.timings.doTick.startTiming(); // Spigot
+-                worldserver.tick(shouldKeepTicking);
+-                worldserver.timings.doTick.stopTiming(); // Spigot
+-                midTickLoadChunks(); // Paper
+-            } catch (Throwable throwable) {
+-                // Spigot Start
+-                CrashReport crashreport;
++    
++                this.profiler.push("tick");
++    
+                 try {
+-                    crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
+-                } catch (Throwable t) {
+-                    if (throwable instanceof ThreadDeath) { throw (ThreadDeath)throwable; } // Paper
+-                    throw new RuntimeException("Error generating crash report", t);
++                    //midTickLoadChunks(); // Paper
++                    worldserver.timings.doTick.startTiming(); // Spigot
++                    worldserver.tick(shouldKeepTicking);
++                    worldserver.timings.doTick.stopTiming(); // Spigot
++                    //midTickLoadChunks(); // Paper
++                } catch (Throwable throwable) {
++                    // Spigot Start
++                    CrashReport crashreport;
++                    try {
++                        crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
++                    } catch (Throwable t) {
++                        if (throwable instanceof ThreadDeath) { throw (ThreadDeath)throwable; } // Paper
++                        throw new RuntimeException("Error generating crash report", t);
++                    }
++                    // Spigot End
++        
++                    worldserver.fillReportDetails(crashreport);
++                    throw new ReportedException(crashreport);
+                 }
+-                // Spigot End
+-
+-                worldserver.fillReportDetails(crashreport);
+-                throw new ReportedException(crashreport);
++    
++                this.profiler.pop();
++                this.profiler.pop();
++                worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
++            });
++    
++            worldServerThread.setDaemon(true);
++            this.worldServerThreads.add(worldServerThread);
++            worldServerThread.start();
++        }
++    
++    
++        for(Thread thread : worldServerThreads){
++            try {
++                thread.join();
++            } catch (InterruptedException e) {
++                e.printStackTrace();
+             }
+-
+-            this.profiler.pop();
+-            this.profiler.pop();
+-            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
+         }
++        worldServerThreads.clear();
+ 
+         this.profiler.popPush("connection");
+         MinecraftTimings.connectionTimer.startTiming(); // Spigot
+@@ -1651,7 +1658,7 @@
+ 
+     @DontObfuscate
+     public String getServerModName() {
+-        return "Paper"; //Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
++        return "Chiyogami"; //Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla! // Chiyogami
+     }
+ 
+     public SystemReport fillSystemReport(SystemReport details) {
+@@ -2047,7 +2054,7 @@
+             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
+             datapackresources.updateGlobals();
+             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
+-            if (Thread.currentThread() != this.serverThread) return; // Paper
++            if (AsyncCatcher.isAsync()) return; // Paper
+             //this.getPlayerList().savePlayers(); // Paper - we don't need to do this
+             this.getPlayerList().reloadResources();
+             this.functionManager.replaceLibrary(this.resources.getFunctionLibrary());
+@@ -2394,7 +2401,8 @@
+     // CraftBukkit start
+     @Override
+     public boolean isSameThread() {
+-        return super.isSameThread() /*|| this.isStopped()*/; // CraftBukkit - MC-142590 // Paper - causes issues elsewhere
++        //return super.isSameThread() /*|| this.isStopped()*/; // CraftBukkit - MC-142590 // Paper - causes issues elsewhere
++        return !AsyncCatcher.isAsync(); // Chiyogami
+     }
+ 
+     public boolean isDebugging() {
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java Chiyogami/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
+--- Original/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java	2021-08-22 21:29:43.609981400 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java	2021-08-22 22:05:38.161138900 +0900
+@@ -15,6 +15,7 @@
+ import net.minecraft.util.profiling.metrics.ProfilerMeasured;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import org.spigotmc.AsyncCatcher;
+ 
+ public abstract class BlockableEventLoop<R extends Runnable> implements ProfilerMeasured, ProcessorHandle<R>, Executor {
+     private final String name;
+@@ -32,7 +33,7 @@
+     protected abstract boolean shouldRun(R task);
+ 
+     public boolean isSameThread() {
+-        return Thread.currentThread() == this.getRunningThread();
++        return !AsyncCatcher.isAsync();
+     }
+ 
+     protected abstract Thread getRunningThread();
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java
+--- Original/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java	2021-08-22 21:29:42.032046300 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java	2021-08-23 00:08:31.638426100 +0900
+@@ -1,5 +1,10 @@
+ package net.minecraft.world.level.entity;
+ 
++import java.lang.reflect.Field;
++import java.util.List;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.CopyOnWriteArrayList;
+ import java.util.function.Consumer;
+ import java.util.function.Predicate;
+ import java.util.stream.Stream;
+@@ -19,7 +24,29 @@
+ 
+     public EntitySection(Class<T> entityClass, Visibility status) {
+         this.chunkStatus = status;
+-        this.storage = new ClassInstanceMultiMap<>(entityClass);
++        this.storage = new ClassInstanceMultiMap<T>(entityClass){
++            {
++                Class<ClassInstanceMultiMap> classInstanceMultiMapClass = ClassInstanceMultiMap.class;
++                try {
++                    Field byClass = classInstanceMultiMapClass.getDeclaredField("byClass");
++                    Map<Class<?>, List<T>> newMap = new ConcurrentHashMap<>();
++                    
++                    Field allInstances = classInstanceMultiMapClass.getDeclaredField("allInstances");
++                    List<T> newList = new CopyOnWriteArrayList<>();
++                    
++                    byClass.setAccessible(true);
++                    allInstances.setAccessible(true);
++                    
++                    newMap.put(entityClass, newList);
++                    
++                    byClass.set(this, newMap);
++                    allInstances.set(this, newList);
++    
++                } catch (Exception e) {
++                    e.printStackTrace();
++                }
++            }
++        };
+     }
+ 
+     public void add(T obj) {
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/world/level/Level.java Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/Level.java
+--- Original/Paper-Server/src/main/java/net/minecraft/world/level/Level.java	2021-08-22 21:29:58.418893900 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/Level.java	2021-08-22 22:05:38.109168100 +0900
+@@ -98,6 +98,7 @@
+ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.event.block.BlockPhysicsEvent;
+ import org.bukkit.event.world.GenericGameEvent;
++import org.spigotmc.AsyncCatcher;
+ // CraftBukkit end
+ 
+ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -919,7 +920,7 @@
+         }
+         // Paper end
+         // CraftBukkit end
+-        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
++        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && AsyncCatcher.isAsync() ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
+     }
+ 
+     public void setBlockEntity(BlockEntity blockEntity) {
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+--- Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-08-22 21:29:59.057153000 +0900
++++ Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-08-22 22:05:38.137152600 +0900
+@@ -230,6 +230,7 @@
+ import org.bukkit.scheduler.BukkitWorker;
+ import org.bukkit.util.StringUtil;
+ import org.bukkit.util.permissions.DefaultPermissions;
++import org.spigotmc.AsyncCatcher;
+ import org.yaml.snakeyaml.Yaml;
+ import org.yaml.snakeyaml.constructor.SafeConstructor;
+ import org.yaml.snakeyaml.error.MarkedYAMLException;
+@@ -240,7 +241,7 @@
+ import javax.annotation.Nonnull; // Paper
+ 
+ public final class CraftServer implements Server {
+-    private final String serverName = "Paper"; // Paper
++    private final String serverName = "Chiyogami"; // Paper
+     private final String serverVersion;
+     private final String bukkitVersion = Versioning.getBukkitVersion();
+     private final Logger logger = Logger.getLogger("Minecraft");
+@@ -2019,7 +2020,7 @@
+ 
+     @Override
+     public boolean isPrimaryThread() {
+-        return Thread.currentThread().equals(console.serverThread) || Thread.currentThread().equals(net.minecraft.server.MinecraftServer.getServer().shutdownThread); // Paper - Fix issues with detecting main thread properly, the only time Watchdog will be used is during a crash shutdown which is a "try our best" scenario
++        return Thread.currentThread().equals(console.serverThread) || Thread.currentThread().equals(net.minecraft.server.MinecraftServer.getServer().shutdownThread) || !AsyncCatcher.isAsync(); // Paper - Fix issues with detecting main thread properly, the only time Watchdog will be used is during a crash shutdown which is a "try our best" scenario
+     }
+ 
+     // Paper start
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+--- Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-08-22 21:29:57.908182900 +0900
++++ Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-08-22 22:05:38.155142600 +0900
+@@ -257,6 +257,7 @@
+ import org.bukkit.util.Consumer;
+ import org.bukkit.util.RayTraceResult;
+ import org.bukkit.util.Vector;
++import org.spigotmc.AsyncCatcher;
+ 
+ public class CraftWorld implements World {
+     public static final int CUSTOM_DIMENSION_OFFSET = 10;
+@@ -486,7 +487,7 @@
+     @Override
+     public Chunk[] getLoadedChunks() {
+         // Paper start
+-        if (Thread.currentThread() != world.getLevel().thread) {
++        if (AsyncCatcher.isAsync()) {
+             synchronized (world.getChunkSource().chunkMap.visibleChunkMap) {
+                 Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = world.getChunkSource().chunkMap.visibleChunkMap;
+                 return chunks.values().stream().map(ChunkHolder::getFullChunk).filter(Objects::nonNull).map(net.minecraft.world.level.chunk.LevelChunk::getBukkitChunk).toArray(Chunk[]::new);
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java Chiyogami/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java
+--- Original/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-08-22 21:29:25.658390500 +0900
++++ Chiyogami/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-08-22 21:49:17.740003800 +0900
+@@ -10,9 +10,16 @@
+ 
+     public static void catchOp(String reason)
+     {
+-        if ( AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread )
++        if ( AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread
++            && !MinecraftServer.getServer().worldServerThreads.contains(Thread.currentThread())) // Chiyogami
+         {
+             throw new IllegalStateException( "Asynchronous " + reason + "!" );
+         }
+     }
++    
++    // Chiyogami
++    public static boolean isAsync(){
++        return Thread.currentThread() != MinecraftServer.getServer().serverThread
++            && !MinecraftServer.getServer().worldServerThreads.contains(Thread.currentThread());
++    }
+ }
