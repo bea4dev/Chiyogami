@@ -339,7 +339,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
      protected abstract Thread getRunningThread();
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java
 --- Original/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java	2021-08-22 21:29:42.032046300 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java	2021-08-23 00:08:31.638426100 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java	2021-08-27 01:34:16.944126000 +0900
 @@ -1,5 +1,10 @@
  package net.minecraft.world.level.entity;
  
@@ -360,10 +360,10 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 +            {
 +                Class<ClassInstanceMultiMap> classInstanceMultiMapClass = ClassInstanceMultiMap.class;
 +                try {
-+                    Field byClass = classInstanceMultiMapClass.getDeclaredField("byClass");
++                    Field byClass = classInstanceMultiMapClass.getDeclaredField("a");
 +                    Map<Class<?>, List<T>> newMap = new ConcurrentHashMap<>();
 +                    
-+                    Field allInstances = classInstanceMultiMapClass.getDeclaredField("allInstances");
++                    Field allInstances = classInstanceMultiMapClass.getDeclaredField("c");
 +                    List<T> newList = new CopyOnWriteArrayList<>();
 +                    
 +                    byClass.setAccessible(true);

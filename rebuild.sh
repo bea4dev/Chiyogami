@@ -9,4 +9,4 @@ cd Chiyogami/
 
 cd ../
 
-cp -f Chiyogami/Paper-Server/build/libs/Paper-Server-1.17.1-R0.1-SNAPSHOT-mojang-mapped.jar Chiyogami-1.17.1.jar
+cp -f Chiyogami/Paper-Server/build/libs/Paper-Server-reobf.jar Chiyogami-1.17.1.jar
