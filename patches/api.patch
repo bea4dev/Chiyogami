@@ -1,16 +1,24 @@
 diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 --- Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-08-21 15:30:09.702265700 +0900
-+++ Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-08-21 15:33:35.181459600 +0900
-@@ -60,6 +60,8 @@
++++ Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-01 05:09:25.711245800 +0900
+@@ -20,6 +20,7 @@
+ import java.util.Map;
+ import java.util.Set;
+ import java.util.WeakHashMap;
++import java.util.concurrent.locks.ReentrantLock;
+ import java.util.logging.Level;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+@@ -60,6 +61,8 @@
      private final Map<String, Map<Permissible, Boolean>> permSubs = new HashMap<String, Map<Permissible, Boolean>>();
      private final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
      private boolean useTimings = false;
 +    
-+    private final Object EVENT_LOCK = new Object(); // Chiyogami
++    private final ReentrantLock EVENT_LOCK = new ReentrantLock(true); // Chiyogami
  
      public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
          server = instance;
-@@ -588,44 +590,46 @@
+@@ -588,45 +591,50 @@
       */
      @Override
      public void callEvent(@NotNull Event event) {
@@ -38,7 +46,8 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin
 -                    plugin.setNaggable(false);
 -
 -                    server.getLogger().log(Level.SEVERE, String.format(
-+        synchronized (EVENT_LOCK) { // Chiyogami
++        try {
++            EVENT_LOCK.lock();
 +            // Paper - replace callEvent by merging to below method
 +            if (event.isAsynchronous() && server.isPrimaryThread()) {
 +                throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
@@ -88,5 +97,8 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin
                  }
 -                // Paper end
              }
++        } finally {
++            EVENT_LOCK.unlock();
          }
      }
+ 

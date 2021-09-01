@@ -144,8 +144,20 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              }
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java
 --- Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-21 15:30:47.478860900 +0900
-+++ Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-22 05:56:56.212911600 +0900
-@@ -33,19 +33,7 @@
++++ Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-31 20:41:52.865317200 +0900
+@@ -1,11 +1,7 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.base.Splitter;
+-import co.aikar.timings.Timings;
+-import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
+-import com.google.common.base.Stopwatch;
+ import com.google.common.collect.Lists;
+-import com.google.common.collect.Maps;
+ import com.google.gson.JsonElement;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.authlib.GameProfileRepository;
+@@ -33,41 +29,27 @@
  import java.nio.file.Paths;
  import java.security.KeyPair;
  import java.text.SimpleDateFormat;
@@ -166,10 +178,22 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  import java.util.Map.Entry;
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
-@@ -64,9 +52,12 @@
- import org.bukkit.Bukkit;
- import org.bukkit.craftbukkit.CraftServer;
- import org.bukkit.craftbukkit.Main;
+ import java.util.function.BooleanSupplier;
+ import javax.annotation.Nullable;
+ import javax.imageio.ImageIO;
+-import joptsimple.NonOptionArgumentSpec;
+-import joptsimple.OptionParser;
++
+ import joptsimple.OptionSet;
+-import joptsimple.OptionSpec;
+ import org.apache.commons.lang3.Validate;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ // CraftBukkit start
+-import joptsimple.OptionSet;
+-import org.bukkit.Bukkit;
+-import org.bukkit.craftbukkit.CraftServer;
+-import org.bukkit.craftbukkit.Main;
 +import org.bukkit.event.block.BlockPhysicsEvent;
 +import org.bukkit.event.inventory.InventoryMoveItemEvent;
  import org.bukkit.event.server.ServerLoadEvent;
@@ -177,18 +201,20 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  import co.aikar.timings.MinecraftTimings; // Paper
 +import org.spigotmc.AsyncCatcher;
  import org.spigotmc.SlackActivityAccountant; // Spigot
++import world.chiyogami.chiyogamilib.scheduler.WorldThreadRunnable;
  
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable, Runnable {
-@@ -186,6 +177,8 @@
+ 
+@@ -186,6 +168,8 @@
      public final double[] recentTps = new double[ 3 ];
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
-+    public final Set<Thread> worldServerThreads = new HashSet<>(); // Chiyogami
++    public final Map<org.bukkit.World, Thread> worldServerThreads = new HashMap<>(); // Chiyogami
 +    
  
      public MinecraftServer(OptionSet options, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory, String s) {
          super("Server");
-@@ -732,7 +725,7 @@
+@@ -732,7 +716,7 @@
          // Paper start - kill main thread, and kill it hard
          shutdownThread = Thread.currentThread();
          org.spigotmc.WatchdogThread.doStop(); // Paper
@@ -197,7 +223,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PAPER)");
              while (this.getThread().isAlive()) {
                  this.getThread().stop();
-@@ -1032,7 +1025,7 @@
+@@ -1032,7 +1016,7 @@
  
      }
  
@@ -206,7 +232,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
          // CraftBukkit start
          if (isOversleep) return canOversleep();// Paper - because of our changes, this logic is broken
          return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
-@@ -1066,7 +1059,7 @@
+@@ -1066,7 +1050,7 @@
      public int midTickChunksTasksRan = 0;
      private long midTickLastRan = 0;
      public void midTickLoadChunks() {
@@ -215,7 +241,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              // only check once per 0.25ms incase this code is called in a hot method
              return;
          }
-@@ -1305,49 +1298,65 @@
+@@ -1305,49 +1289,68 @@
  
          while (iterator.hasNext()) {
              WorldServer worldserver = (WorldServer) iterator.next();
@@ -248,6 +274,9 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -                    CrashReport crashreport;
 +    
 +            Thread worldServerThread = new Thread(() -> {
++                
++                WorldThreadRunnable.worldThreadHeartBeat(worldserver.getWorld(), currentTick); // Chiyogami
++                
 +                worldserver.hasPhysicsEvent =  BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
 +                TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
 +                if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || getAllowNether()) { // CraftBukkit
@@ -303,12 +332,12 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 +            });
 +    
 +            worldServerThread.setDaemon(true);
-+            this.worldServerThreads.add(worldServerThread);
++            this.worldServerThreads.put(worldserver.getWorld(), worldServerThread);
 +            worldServerThread.start();
 +        }
 +        
 +        
-+        for(Thread thread : worldServerThreads){
++        for(Thread thread : worldServerThreads.values()){
 +            try {
 +                thread.join();
 +            } catch (InterruptedException e) {
@@ -319,7 +348,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
          this.methodProfiler.exitEnter("connection");
          MinecraftTimings.connectionTimer.startTiming(); // Spigot
-@@ -1571,7 +1580,7 @@
+@@ -1571,7 +1574,7 @@
      }
  
      public String getServerModName() {
@@ -328,7 +357,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -1964,7 +1973,7 @@
+@@ -1964,7 +1967,7 @@
      }
  
      public void reload() {
@@ -337,7 +366,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              this.execute(this::reload);
          } else {
              this.getPlayerList().savePlayers();
-@@ -2333,7 +2342,8 @@
+@@ -2333,7 +2336,8 @@
      // CraftBukkit start
      @Override
      public boolean isMainThread() {
@@ -349,8 +378,54 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
      @Deprecated
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java Paper-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java
 --- Original/Paper-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java	2021-08-21 15:30:49.104150400 +0900
-+++ Paper-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java	2021-08-21 15:33:35.342366700 +0900
-@@ -629,7 +629,7 @@
++++ Paper-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java	2021-08-31 21:32:06.126706900 +0900
+@@ -32,11 +32,8 @@
+ import java.util.Optional;
+ import java.util.Queue;
+ import java.util.Set;
+-import java.util.concurrent.CancellationException;
++import java.util.concurrent.*;
+ import java.util.UUID; // Paper
+-import java.util.concurrent.CompletableFuture;
+-import java.util.concurrent.CompletionException;
+-import java.util.concurrent.Executor;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.function.BooleanSupplier;
+ import java.util.function.Consumer;
+@@ -83,7 +80,7 @@
+     // Paper end
+     public final com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> pendingVisibleChunks = new com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk>(); // Paper - this is used if the visible chunks is updated while iterating only
+     public transient com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> visibleChunksClone; // Paper - used for async access of visible chunks, clone and cache only when needed
+-    private final Long2ObjectLinkedOpenHashMap<PlayerChunk> pendingUnload;
++    private final Map<Long, PlayerChunk> pendingUnload;
+     final LongSet loadedChunks; // Paper - private -> package
+     public final WorldServer world;
+     private final LightEngineThreaded lightEngine;
+@@ -109,7 +106,7 @@
+     public final DefinedStructureManager definedStructureManager; // Paper - private -> public
+     private final File w;
+     private final PlayerMap playerMap;
+-    public final Int2ObjectMap<PlayerChunkMap.EntityTracker> trackedEntities;
++    public final Map<Integer, PlayerChunkMap.EntityTracker> trackedEntities;
+     private final Queue<Runnable> z;
+     int viewDistance; // Paper - private -> package private
+     public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
+@@ -274,12 +271,12 @@
+     public PlayerChunkMap(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator<?> chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i) {
+         super(new File(worldserver.getWorldProvider().getDimensionManager().a(file), "region"), datafixer);
+         //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
+-        this.pendingUnload = new Long2ObjectLinkedOpenHashMap();
++        this.pendingUnload = new ConcurrentHashMap<>();
+         this.loadedChunks = new LongOpenHashSet();
+         this.unloadQueue = new LongOpenHashSet();
+         this.u = new AtomicInteger();
+         this.playerMap = new PlayerMap();
+-        this.trackedEntities = new Int2ObjectOpenHashMap();
++        this.trackedEntities = new ConcurrentHashMap<>();
+         this.z = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper
+         this.definedStructureManager = definedstructuremanager;
+         this.w = worldserver.getWorldProvider().getDimensionManager().a(file);
+@@ -629,7 +626,7 @@
          }
      }
      public Long2ObjectLinkedOpenHashMap<PlayerChunk> getVisibleChunks() {
@@ -359,7 +434,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              return this.visibleChunks;
          } else {
              synchronized (this.visibleChunks) {
-@@ -646,7 +646,7 @@
+@@ -646,7 +643,7 @@
      @Nullable
      public PlayerChunk getVisibleChunk(long i) { // Paper - protected -> public
          // Paper start - mt safe get
@@ -368,6 +443,42 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              synchronized (this.visibleChunks) {
                  return (PlayerChunk) (this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.get(i) : ((ProtectedVisibleChunksMap)this.visibleChunks).safeGet(i));
              }
+@@ -1955,7 +1952,7 @@
+                         EntityPlayer entityplayer = (EntityPlayer) entity;
+ 
+                         this.a(entityplayer, true);
+-                        ObjectIterator objectiterator = this.trackedEntities.values().iterator();
++                        Iterator objectiterator = this.trackedEntities.values().iterator();
+ 
+                         while (objectiterator.hasNext()) {
+                             PlayerChunkMap.EntityTracker playerchunkmap_entitytracker1 = (PlayerChunkMap.EntityTracker) objectiterator.next();
+@@ -1977,7 +1974,7 @@
+             EntityPlayer entityplayer = (EntityPlayer) entity;
+ 
+             this.a(entityplayer, false);
+-            ObjectIterator objectiterator = this.trackedEntities.values().iterator();
++            Iterator objectiterator = this.trackedEntities.values().iterator();
+ 
+             while (objectiterator.hasNext()) {
+                 PlayerChunkMap.EntityTracker playerchunkmap_entitytracker = (PlayerChunkMap.EntityTracker) objectiterator.next();
+@@ -2029,7 +2026,7 @@
+         List<EntityPlayer> list1 = this.world.getPlayers();
+ 
+         PlayerChunkMap.EntityTracker playerchunkmap_entitytracker;
+-        ObjectIterator objectiterator;
++        Iterator objectiterator;
+         world.timings.tracker1.startTiming(); // Paper
+ 
+         for (objectiterator = this.trackedEntities.values().iterator(); objectiterator.hasNext(); playerchunkmap_entitytracker.trackerEntry.a()) {
+@@ -2262,7 +2259,7 @@
+         // Paper start
+         // Replace trackedPlayers Set with a Map. The value is true until the player receives
+         // their first update (which is forced to have absolute coordinates), false afterward.
+-        public java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = new java.util.HashMap<>();
++        public java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = new ConcurrentHashMap<>();
+         public Set<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
+ 
+         public EntityTracker(Entity entity, int i, int j, boolean flag) {
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/PlayerConnectionUtils.java Paper-Server/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
 --- Original/Paper-Server/src/main/java/net/minecraft/server/PlayerConnectionUtils.java	2021-08-21 15:30:49.966330500 +0900
 +++ Paper-Server/src/main/java/net/minecraft/server/PlayerConnectionUtils.java	2021-08-21 15:33:35.357357900 +0900
@@ -419,16 +530,28 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              // CraftBukkit start
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/WorldServer.java Paper-Server/src/main/java/net/minecraft/server/WorldServer.java
 --- Original/Paper-Server/src/main/java/net/minecraft/server/WorldServer.java	2021-08-21 15:30:49.110146700 +0900
-+++ Paper-Server/src/main/java/net/minecraft/server/WorldServer.java	2021-08-21 15:33:35.389340000 +0900
-@@ -31,6 +31,7 @@
- import java.util.Random;
- import java.util.Set;
- import java.util.UUID;
++++ Paper-Server/src/main/java/net/minecraft/server/WorldServer.java	2021-09-01 04:55:18.024054000 +0900
+@@ -22,15 +22,10 @@
+ import java.io.IOException;
+ import java.io.Writer;
+ import java.nio.file.Files;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Objects;
+-import java.util.Optional;
+-import java.util.Queue;
+-import java.util.Random;
+-import java.util.Set;
+-import java.util.UUID;
++import java.util.*;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentLinkedDeque;
 +import java.util.concurrent.CopyOnWriteArrayList;
  import java.util.concurrent.Executor;
  import java.util.function.BooleanSupplier;
  import java.util.function.Predicate;
-@@ -49,12 +50,13 @@
+@@ -49,16 +44,17 @@
  import org.bukkit.event.server.MapInitializeEvent;
  import org.bukkit.event.weather.LightningStrikeEvent;
  import org.bukkit.event.world.TimeSkipEvent;
@@ -439,11 +562,28 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
      private static final Logger LOGGER = LogManager.getLogger();
 -    private final List<Entity> globalEntityList = Lists.newArrayList();
+-    public final Int2ObjectMap<Entity> entitiesById = new Int2ObjectLinkedOpenHashMap();
+-    private final Map<UUID, Entity> entitiesByUUID = Maps.newHashMap();
+-    private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
+-    public final List<EntityPlayer> players = Lists.newArrayList(); // Paper - private -> public
 +    private final List<Entity> globalEntityList = new CopyOnWriteArrayList<>();
-     public final Int2ObjectMap<Entity> entitiesById = new Int2ObjectLinkedOpenHashMap();
-     private final Map<UUID, Entity> entitiesByUUID = Maps.newHashMap();
-     private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
-@@ -253,7 +255,7 @@
++    public final Map<Integer, Entity> entitiesById = new ConcurrentHashMap<>();
++    private final Map<UUID, Entity> entitiesByUUID = new ConcurrentHashMap<>();
++    private final Queue<Entity> entitiesToAdd = new ConcurrentLinkedDeque<>();
++    public final List<EntityPlayer> players = new CopyOnWriteArrayList<>(); // Paper - private -> public
+     boolean tickingEntities;
+     // Paper start
+     List<java.lang.Runnable> afterEntityTickingTasks = Lists.newArrayList();
+@@ -228,7 +224,7 @@
+             }, IRegistry.FLUID::getKey, IRegistry.FLUID::get, this::a, "Fluids"); // Paper - Timings
+         }
+ 
+-        this.navigators = Sets.newHashSet();
++        this.navigators = ConcurrentHashMap.newKeySet();
+         this.I = new ObjectLinkedOpenHashSet();
+         this.dataManager = worldnbtstorage;
+         this.server = minecraftserver;
+@@ -253,7 +249,7 @@
      @Override
      protected TileEntity getTileEntity(BlockPosition pos, boolean validate) {
          TileEntity result = super.getTileEntity(pos, validate);
@@ -452,6 +592,58 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              // SPIGOT-5378: avoid deadlock, this can be called in loading logic (i.e lighting) but getType() will block on chunk load
              return result;
          }
+@@ -493,13 +489,13 @@
+ 
+             gameprofilerfiller.exitEnter("regular");
+             this.tickingEntities = true;
+-            ObjectIterator objectiterator = this.entitiesById.int2ObjectEntrySet().iterator();
++            Iterator objectiterator = new HashMap<>(this.entitiesById).entrySet().iterator();
+ 
+             org.spigotmc.ActivationRange.activateEntities(this); // Spigot
+             timings.entityTick.startTiming(); // Spigot
+             TimingHistory.entityTicks += this.globalEntityList.size(); // Paper
+             while (objectiterator.hasNext()) {
+-                Entry<Entity> entry = (Entry) objectiterator.next();
++                Map.Entry<Integer, Entity> entry = (Map.Entry) objectiterator.next();
+                 Entity entity1 = (Entity) entry.getValue();
+                 Entity entity2 = entity1.getVehicle();
+ 
+@@ -1063,7 +1059,7 @@
+     public List<Entity> a(@Nullable EntityTypes<?> entitytypes, Predicate<? super Entity> predicate) {
+         List<Entity> list = Lists.newArrayList();
+         ChunkProviderServer chunkproviderserver = this.getChunkProvider();
+-        ObjectIterator objectiterator = this.entitiesById.values().iterator();
++        Iterator objectiterator = this.entitiesById.values().iterator();
+ 
+         while (objectiterator.hasNext()) {
+             Entity entity = (Entity) objectiterator.next();
+@@ -1078,7 +1074,7 @@
+ 
+     public List<EntityEnderDragon> j() {
+         List<EntityEnderDragon> list = Lists.newArrayList();
+-        ObjectIterator objectiterator = this.entitiesById.values().iterator();
++        Iterator objectiterator = this.entitiesById.values().iterator();
+ 
+         while (objectiterator.hasNext()) {
+             Entity entity = (Entity) objectiterator.next();
+@@ -1128,7 +1124,7 @@
+     public int[] countMobs(boolean updatePlayerCounts) {
+         int[] ret = new int[EntityPlayer.ENUMCREATURETYPE_TOTAL_ENUMS];
+         // Paper end
+-        ObjectIterator objectiterator = this.entitiesById.values().iterator();
++        Iterator objectiterator = this.entitiesById.values().iterator();
+ 
+         while (objectiterator.hasNext()) {
+             Entity entity = (Entity) objectiterator.next();
+@@ -1334,7 +1330,7 @@
+         java.util.List<Entity> toMoveChunks = new java.util.ArrayList<>(); // Paper
+         for (int j = 0; j < i; ++j) {
+             List<Entity> entityslice = aentityslice[j]; // Spigot
+-            Iterator iterator = entityslice.iterator();
++            Iterator iterator = new ArrayList<>(entityslice).iterator(); // Chiyogami
+ 
+             while (iterator.hasNext()) {
+                 Entity entity = (Entity) iterator.next();
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 --- Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-08-21 15:30:49.242046300 +0900
 +++ Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-08-21 15:33:35.407329600 +0900
@@ -492,7 +684,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/cra
      @Override
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 --- Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-08-21 15:30:49.246124200 +0900
-+++ Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-08-21 15:33:35.431315800 +0900
++++ Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-09-01 01:08:03.156825000 +0900
 @@ -265,6 +265,7 @@
  import org.bukkit.util.Consumer;
  import org.bukkit.util.RayTraceResult;
@@ -510,16 +702,75 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/cra
              synchronized (world.getChunkProvider().playerChunkMap.visibleChunks) {
                  Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkProvider().playerChunkMap.visibleChunks;
                  return chunks.values().stream().map(PlayerChunk::getFullChunk).filter(Objects::nonNull).map(net.minecraft.server.Chunk::getBukkitChunk).toArray(Chunk[]::new);
+@@ -1245,7 +1246,7 @@
+ 
+     @Override
+     public Collection<Entity> getNearbyEntities(BoundingBox boundingBox, Predicate<Entity> filter) {
+-        org.spigotmc.AsyncCatcher.catchOp("getNearbyEntities"); // Spigot
++        
+         Validate.notNull(boundingBox, "Bounding box is null!");
+ 
+         AxisAlignedBB bb = new AxisAlignedBB(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ(), boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java Paper-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+--- Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java	2021-08-21 15:30:48.504575200 +0900
++++ Paper-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java	2021-08-30 04:27:49.574637000 +0900
+@@ -26,6 +26,7 @@
+ import java.util.Set;
+ import java.util.UUID;
+ import java.util.WeakHashMap;
++import java.util.concurrent.CompletableFuture;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ import javax.annotation.Nullable;
+@@ -73,20 +74,7 @@
+ import net.minecraft.server.WorldServer;
+ import org.apache.commons.lang.NotImplementedException;
+ import org.apache.commons.lang.Validate;
+-import org.bukkit.BanList;
+-import org.bukkit.Bukkit;
+-import org.bukkit.DyeColor;
+-import org.bukkit.Effect;
+-import org.bukkit.GameMode;
+-import org.bukkit.Instrument;
+-import org.bukkit.Location;
+-import org.bukkit.Material;
+-import org.bukkit.Note;
+-import org.bukkit.OfflinePlayer;
+-import org.bukkit.Particle;
+-import org.bukkit.Sound;
+-import org.bukkit.Statistic;
+-import org.bukkit.WeatherType;
++import org.bukkit.*;
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+ import org.bukkit.conversations.Conversation;
+@@ -124,6 +112,7 @@
+ import org.bukkit.scoreboard.Scoreboard;
+ 
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
++import world.chiyogami.chiyogamilib.scheduler.WorldThreadRunnable;
+ 
+ @DelegateDeserialization(CraftOfflinePlayer.class)
+ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1961,7 +1950,7 @@
+     public void resetCooldown() {
+         getHandle().resetCooldown();
+     }
+-
++    
+     @Override
+     public void remove() {
+         if (this.getHandle().getClass().equals(EntityPlayer.class)) { // special case for NMS plugins inheriting
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java
 --- Original/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-08-21 15:30:18.217822700 +0900
-+++ Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-08-21 15:33:35.457300400 +0900
++++ Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-08-30 00:48:33.377072800 +0900
 @@ -10,9 +10,16 @@
  
      public static void catchOp(String reason)
      {
 -        if ( enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread )
 +        if ( enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread
-+            && !MinecraftServer.getServer().worldServerThreads.contains(Thread.currentThread())) // Chiyogami
++            && !MinecraftServer.getServer().worldServerThreads.containsValue(Thread.currentThread())) // Chiyogami
          {
              throw new IllegalStateException( "Asynchronous " + reason + "!" );
          }
@@ -528,6 +779,6 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/spigotmc/A
 +    // Chiyogami
 +    public static boolean isAsync(){
 +        return Thread.currentThread() != MinecraftServer.getServer().serverThread
-+            && !MinecraftServer.getServer().worldServerThreads.contains(Thread.currentThread());
++            && !MinecraftServer.getServer().worldServerThreads.containsValue(Thread.currentThread());
 +    }
  }
