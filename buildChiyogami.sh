@@ -30,12 +30,14 @@ echo
 cp -f patches/api.patch Chiyogami/Paper-API/
 cp -f patches/mojang.patch Chiyogami/Paper-MojangAPI/
 cp -f patches/server.patch Chiyogami/Paper-Server/
+cp -f patches/pom.xml.patch Chiyogami/Paper-Server/
 
 cd Chiyogami/
 
 patch -Np0 < Paper-API/api.patch
 patch -Np0 < Paper-MojangAPI/mojang.patch
 patch -Np0 < Paper-Server/server.patch
+patch -Np0 < Paper-Server/pom.xml.patch
 
 cd ../
 
