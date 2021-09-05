@@ -1,0 +1,19 @@
+--- Original/Paper-Server/build.gradle.kts	2021-08-22 21:29:58.312951700 +0900
++++ Chiyogami/Paper-Server/build.gradle.kts	2021-09-05 16:22:32.640867400 +0900
+@@ -25,6 +25,7 @@
+         }
+     }
+     // Paper end
++    maven("https://jitpack.io") // Chiyogami
+ }
+ 
+ dependencies {
+@@ -66,6 +67,8 @@
+     testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
+     testImplementation("junit:junit:4.13.1")
+     testImplementation("org.hamcrest:hamcrest-library:1.3")
++
++    implementation("com.github.Be4rJP:ChiyogamiLib:2dc09b1fc3") // Chiyogami
+ }
+ 
+ tasks.jar {

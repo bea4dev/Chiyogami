@@ -31,12 +31,14 @@ echo
 cp -f patches/api.patch Chiyogami/Paper-API/
 cp -f patches/mojang.patch Chiyogami/Paper-MojangAPI/
 cp -f patches/server.patch Chiyogami/Paper-Server/
+cp -f patches/build.gradle.kts.patch Chiyogami/Paper-Server/
 
 cd Chiyogami/
 
 patch -Np1 < Paper-API/api.patch
 patch -Np1 < Paper-MojangAPI/mojang.patch
 patch -Np1 < Paper-Server/server.patch
+patch -Np1 < Paper-Server/build.gradle.kts.patch
 
 cd ../
 
