@@ -732,7 +732,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              }
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java
 --- Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-22 21:29:57.318730900 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-05 17:15:11.068614800 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-09 23:32:03.171295900 +0900
 @@ -31,21 +31,8 @@
  import java.nio.file.Path;
  import java.security.KeyPair;
@@ -834,11 +834,11 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -                } catch (Throwable t) {
 -                    if (throwable instanceof ThreadDeath) { throw (ThreadDeath)throwable; } // Paper
 -                    throw new RuntimeException("Error generating crash report", t);
-+                    //midTickLoadChunks(); // Paper
++                    midTickLoadChunks(); // Paper
 +                    worldserver.timings.doTick.startTiming(); // Spigot
 +                    worldserver.tick(shouldKeepTicking);
 +                    worldserver.timings.doTick.stopTiming(); // Spigot
-+                    //midTickLoadChunks(); // Paper
++                    midTickLoadChunks(); // Paper
 +                } catch (Throwable throwable) {
 +                    // Spigot Start
 +                    CrashReport crashreport;

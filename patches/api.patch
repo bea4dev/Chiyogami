@@ -1,3 +1,68 @@
+diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java Chiyogami/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java
+--- Original/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-08-22 21:27:54.234907200 +0900
++++ Chiyogami/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-09 23:32:03.159302200 +0900
+@@ -28,6 +28,9 @@
+ 
+ import java.util.ArrayDeque;
+ import java.util.Deque;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentLinkedDeque;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+@@ -39,13 +42,13 @@
+ class TimingHandler implements Timing {
+ 
+     private static AtomicInteger idPool = new AtomicInteger(1);
+-    private static Deque<TimingHandler> TIMING_STACK = new ArrayDeque<>();
++    private static Deque<TimingHandler> TIMING_STACK = new ConcurrentLinkedDeque<>();
+     final int id = idPool.getAndIncrement();
+ 
+     final TimingIdentifier identifier;
+     private final boolean verbose;
+ 
+-    private final Int2ObjectOpenHashMap<TimingData> children = new LoadingIntMap<>(TimingData::new);
++    private final Map<Integer, TimingData> children = new ConcurrentHashMap<>();
+ 
+     final TimingData record;
+     private TimingHandler startParent;
+@@ -124,6 +127,8 @@
+ 
+     private void popTimingStack() {
+         TimingHandler last;
++        TIMING_STACK.remove(this);
++        /*
+         while ((last = TIMING_STACK.removeLast()) != this) {
+             last.timingDepth = 0;
+             if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
+@@ -138,7 +143,7 @@
+                 TIMING_STACK.addLast(last);
+                 break;
+             }
+-        }
++        }*/
+     }
+ 
+     @Override
+@@ -148,7 +153,7 @@
+ 
+     void addDiff(long diff, @Nullable TimingHandler parent) {
+         if (parent != null) {
+-            parent.children.get(id).add(diff);
++            parent.children.computeIfAbsent(id, TimingData::new).add(diff);
+         }
+ 
+         record.add(diff);
+@@ -159,7 +164,7 @@
+         }
+         if (groupHandler != null) {
+             groupHandler.addDiff(diff, parent);
+-            groupHandler.children.get(id).add(diff);
++            groupHandler.children.computeIfAbsent(id, TimingData::new).add(diff);
+         }
+     }
+ 
 diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Chiyogami/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 --- Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-08-22 21:28:06.129962500 +0900
 +++ Chiyogami/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-06 05:28:37.238616400 +0900
