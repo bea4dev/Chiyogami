@@ -144,7 +144,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              }
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java
 --- Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-21 15:30:47.478860900 +0900
-+++ Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-31 20:41:52.865317200 +0900
++++ Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-09 20:01:12.477030500 +0900
 @@ -1,11 +1,7 @@
  package net.minecraft.server;
  
@@ -298,9 +298,9 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -                        crashreport = CrashReport.a(throwable, "Exception ticking world");
 -                    } catch (Throwable t) {
 -                        throw new RuntimeException("Error generating crash report", t);
-+                        //worldserver.timings.doTick.startTiming(); // Spigot
++                        worldserver.timings.doTick.startTiming(); // Spigot
 +                        worldserver.doTick(booleansupplier);
-+                        //worldserver.timings.doTick.stopTiming(); // Spigot
++                        worldserver.timings.doTick.stopTiming(); // Spigot
 +                    } catch (Throwable throwable) {
 +                        throwable.printStackTrace();
 +                        // Spigot Start
@@ -530,7 +530,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              // CraftBukkit start
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/WorldServer.java Paper-Server/src/main/java/net/minecraft/server/WorldServer.java
 --- Original/Paper-Server/src/main/java/net/minecraft/server/WorldServer.java	2021-08-21 15:30:49.110146700 +0900
-+++ Paper-Server/src/main/java/net/minecraft/server/WorldServer.java	2021-09-01 04:55:18.024054000 +0900
++++ Paper-Server/src/main/java/net/minecraft/server/WorldServer.java	2021-09-01 23:58:32.500264500 +0900
 @@ -22,15 +22,10 @@
  import java.io.IOException;
  import java.io.Writer;
@@ -592,7 +592,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              // SPIGOT-5378: avoid deadlock, this can be called in loading logic (i.e lighting) but getType() will block on chunk load
              return result;
          }
-@@ -493,13 +489,13 @@
+@@ -493,13 +489,14 @@
  
              gameprofilerfiller.exitEnter("regular");
              this.tickingEntities = true;
@@ -602,13 +602,29 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              org.spigotmc.ActivationRange.activateEntities(this); // Spigot
              timings.entityTick.startTiming(); // Spigot
              TimingHistory.entityTicks += this.globalEntityList.size(); // Paper
++            Set<Integer> removeSet = new HashSet<>();
              while (objectiterator.hasNext()) {
 -                Entry<Entity> entry = (Entry) objectiterator.next();
 +                Map.Entry<Integer, Entity> entry = (Map.Entry) objectiterator.next();
                  Entity entity1 = (Entity) entry.getValue();
                  Entity entity2 = entity1.getVehicle();
  
-@@ -1063,7 +1059,7 @@
+@@ -536,12 +533,13 @@
+                 gameprofilerfiller.enter("remove");
+                 if (entity1.dead) {
+                     this.removeEntityFromChunk(entity1);
+-                    objectiterator.remove();
++                    removeSet.add(entry.getKey());
+                     this.unregisterEntity(entity1);
+                 }
+ 
+                 gameprofilerfiller.exit();
+             }
++            removeSet.forEach(entitiesById::remove);
+             timings.entityTick.stopTiming(); // Spigot
+ 
+             this.tickingEntities = false;
+@@ -1063,7 +1061,7 @@
      public List<Entity> a(@Nullable EntityTypes<?> entitytypes, Predicate<? super Entity> predicate) {
          List<Entity> list = Lists.newArrayList();
          ChunkProviderServer chunkproviderserver = this.getChunkProvider();
@@ -617,7 +633,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
          while (objectiterator.hasNext()) {
              Entity entity = (Entity) objectiterator.next();
-@@ -1078,7 +1074,7 @@
+@@ -1078,7 +1076,7 @@
  
      public List<EntityEnderDragon> j() {
          List<EntityEnderDragon> list = Lists.newArrayList();
@@ -626,7 +642,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
          while (objectiterator.hasNext()) {
              Entity entity = (Entity) objectiterator.next();
-@@ -1128,7 +1124,7 @@
+@@ -1128,7 +1126,7 @@
      public int[] countMobs(boolean updatePlayerCounts) {
          int[] ret = new int[EntityPlayer.ENUMCREATURETYPE_TOTAL_ENUMS];
          // Paper end
@@ -635,7 +651,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
          while (objectiterator.hasNext()) {
              Entity entity = (Entity) objectiterator.next();
-@@ -1334,7 +1330,7 @@
+@@ -1334,7 +1332,7 @@
          java.util.List<Entity> toMoveChunks = new java.util.ArrayList<>(); // Paper
          for (int j = 0; j < i; ++j) {
              List<Entity> entityslice = aentityslice[j]; // Spigot
