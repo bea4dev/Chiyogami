@@ -1,6 +1,6 @@
 diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java Paper-API/src/main/java/co/aikar/timings/TimingHandler.java
 --- Original/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-08-21 18:24:48.774117400 +0900
-+++ Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-09 23:06:34.649859700 +0900
++++ Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-12 16:49:11.331305200 +0900
 @@ -28,6 +28,9 @@
  
  import java.util.ArrayDeque;
@@ -27,16 +27,19 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/
  
      final TimingData record;
      private TimingHandler startParent;
-@@ -124,6 +127,8 @@
+@@ -124,6 +127,11 @@
  
      private void popTimingStack() {
          TimingHandler last;
++        if(this instanceof FullServerTickHandler){
++            TIMING_STACK.clear();
++        }
 +        TIMING_STACK.remove(this);
 +        /*
          while ((last = TIMING_STACK.removeLast()) != this) {
              last.timingDepth = 0;
              if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
-@@ -138,7 +143,7 @@
+@@ -138,7 +146,7 @@
                  TIMING_STACK.addLast(last);
                  break;
              }
@@ -45,7 +48,7 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/
      }
  
      @Override
-@@ -148,7 +153,7 @@
+@@ -148,7 +156,7 @@
  
      void addDiff(long diff, @Nullable TimingHandler parent) {
          if (parent != null) {
@@ -54,7 +57,7 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/
          }
  
          record.add(diff);
-@@ -159,7 +164,7 @@
+@@ -159,7 +167,7 @@
          }
          if (groupHandler != null) {
              groupHandler.addDiff(diff, parent);
