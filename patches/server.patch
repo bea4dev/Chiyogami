@@ -732,8 +732,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              }
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java
 --- Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-22 21:29:57.318730900 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-09 23:32:03.171295900 +0900
-@@ -31,21 +31,8 @@
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-23 02:36:50.897178800 +0900
+@@ -31,22 +31,10 @@
  import java.nio.file.Path;
  import java.security.KeyPair;
  import java.text.SimpleDateFormat;
@@ -754,19 +754,22 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -import java.util.Set;
 -import java.util.UUID;
  import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.ConcurrentHashMap;
  import java.util.concurrent.Executor;
  import java.util.concurrent.atomic.AtomicReference;
-@@ -185,7 +172,9 @@
+ import java.util.function.BooleanSupplier;
+@@ -185,7 +173,10 @@
  // CraftBukkit end
  
  import co.aikar.timings.MinecraftTimings; // Paper
 +import org.spigotmc.AsyncCatcher;
  import org.spigotmc.SlackActivityAccountant; // Spigot
++import world.chiyogami.chiyogamilib.monitor.PerformanceMonitor;
 +import world.chiyogami.chiyogamilib.scheduler.WorldThreadRunnable;
  
  public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements SnooperPopulator, CommandSource, AutoCloseable {
  
-@@ -306,6 +295,8 @@
+@@ -306,6 +297,8 @@
      public final double[] recentTps = new double[ 3 ];
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
@@ -775,7 +778,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
      public volatile Thread shutdownThread; // Paper
      public volatile boolean abnormalExit = false; // Paper
-@@ -1287,7 +1278,7 @@
+@@ -1287,7 +1280,7 @@
      public int midTickChunksTasksRan = 0;
      private long midTickLastRan = 0;
      public void midTickLoadChunks() {
@@ -784,8 +787,30 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              // only check once per 0.25ms incase this code is called in a hot method
              return;
          }
-@@ -1530,13 +1521,18 @@
+@@ -1388,6 +1381,7 @@
+     public void onServerExit() {}
  
+     public void tickServer(BooleanSupplier shouldKeepTicking) {
++        long fullServerTickNanoTime = System.nanoTime(); // Chiyogami
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
+         this.slackActivityAccountant.tickStarted(); // Spigot
+         long i = Util.getNanos();
+@@ -1482,6 +1476,7 @@
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+         this.slackActivityAccountant.tickEnded(l); // Spigot
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
++        PerformanceMonitor.setFullServerTickNanoTime(System.nanoTime() - fullServerTickNanoTime); // Chiyogami
+     }
+ 
+     public void tickChildren(BooleanSupplier shouldKeepTicking) {
+@@ -1527,16 +1522,25 @@
+         }
+         // Paper end
+         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
+-
++    
++        long worldServerTickNanoTime = System.nanoTime();
++        Map<org.bukkit.World, Long> worldThreadTimeMap = new ConcurrentHashMap<>();
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
 -            worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
@@ -798,6 +823,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 +            
 +            Thread worldServerThread = new Thread(() -> {
 +    
++                long worldServerThreadNanoTime = System.nanoTime();
++                
 +                WorldThreadRunnable.worldThreadHeartBeat(worldserver.getWorld(), currentTick);
 +                
 +                worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
@@ -810,7 +837,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              /* Drop global time updates
              if (this.tickCount % 20 == 0) {
                  this.profiler.enter("timeSync");
-@@ -1544,34 +1540,49 @@
+@@ -1544,34 +1548,52 @@
                  this.profiler.exit();
              }
              // CraftBukkit end */
@@ -861,6 +888,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 +                this.profiler.pop();
 +                this.profiler.pop();
 +                worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
++                worldThreadTimeMap.put(worldserver.getWorld(), System.nanoTime() - worldServerThreadNanoTime);
 +            });
 +    
 +            worldServerThread.setDaemon(true);
@@ -881,10 +909,12 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
          }
 +        worldServerThreads.clear();
++        PerformanceMonitor.setWorldTickNanoTimeMap(worldThreadTimeMap);
++        PerformanceMonitor.setAllWorldTickNanoTime(System.nanoTime() - worldServerTickNanoTime);
  
          this.profiler.popPush("connection");
          MinecraftTimings.connectionTimer.startTiming(); // Spigot
-@@ -1651,7 +1662,7 @@
+@@ -1651,7 +1673,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -893,7 +923,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -2047,7 +2058,7 @@
+@@ -2047,7 +2069,7 @@
              this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
              datapackresources.updateGlobals();
              new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
@@ -902,7 +932,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              //this.getPlayerList().savePlayers(); // Paper - we don't need to do this
              this.getPlayerList().reloadResources();
              this.functionManager.replaceLibrary(this.resources.getFunctionLibrary());
-@@ -2394,7 +2405,8 @@
+@@ -2394,7 +2416,8 @@
      // CraftBukkit start
      @Override
      public boolean isSameThread() {
