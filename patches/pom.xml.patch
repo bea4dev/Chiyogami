@@ -1,5 +1,5 @@
 --- Original/Paper-Server/pom.xml	2021-08-21 15:30:46.432634800 +0900
-+++ Paper-Server/pom.xml	2021-09-01 00:30:56.692632000 +0900
++++ Paper-Server/pom.xml	2021-09-22 22:46:24.736007600 +0900
 @@ -140,6 +140,12 @@
              <version>4.8.47</version>
              <scope>test</scope>
@@ -7,7 +7,7 @@
 +        <dependency>
 +            <groupId>com.github.Be4rJP</groupId>
 +            <artifactId>ChiyogamiLib</artifactId>
-+            <version>2dc09b1fc3</version>
++            <version>6694a80cb2</version>
 +            <scope>compile</scope>
 +        </dependency>
      </dependencies>
