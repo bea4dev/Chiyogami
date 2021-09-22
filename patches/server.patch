@@ -347,8 +347,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              }
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java
 --- Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-21 18:25:51.060523100 +0900
-+++ Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-09 23:03:11.193058400 +0900
-@@ -32,21 +32,8 @@
++++ Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-23 02:19:46.147932700 +0900
+@@ -32,22 +32,10 @@
  import java.nio.file.Path;
  import java.security.KeyPair;
  import java.text.SimpleDateFormat;
@@ -369,9 +369,11 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -import java.util.Set;
 -import java.util.UUID;
  import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.ConcurrentHashMap;
  import java.util.concurrent.Executor;
  import java.util.concurrent.atomic.AtomicReference;
-@@ -180,9 +167,11 @@
+ import java.util.function.BooleanSupplier;
+@@ -180,9 +168,12 @@
  // CraftBukkit end
  
  import co.aikar.timings.MinecraftTimings; // Paper
@@ -379,11 +381,12 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  import org.spigotmc.SlackActivityAccountant; // Spigot
  import io.papermc.paper.util.PaperJvmChecker; // Paper
  import io.papermc.paper.event.server.ServerResourcesReloadedEvent; // Paper
++import world.chiyogami.chiyogamilib.monitor.PerformanceMonitor;
 +import world.chiyogami.chiyogamilib.scheduler.WorldThreadRunnable;
  
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable {
  
-@@ -281,6 +270,8 @@
+@@ -281,6 +272,8 @@
      public final double[] recentTps = new double[ 3 ];
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
@@ -392,7 +395,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
      public volatile Thread shutdownThread; // Paper
      public volatile boolean abnormalExit = false; // Paper
-@@ -1226,7 +1217,7 @@
+@@ -1226,7 +1219,7 @@
      public int midTickChunksTasksRan = 0;
      private long midTickLastRan = 0;
      public void midTickLoadChunks() {
@@ -401,8 +404,30 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              // only check once per 0.25ms incase this code is called in a hot method
              return;
          }
-@@ -1467,48 +1458,68 @@
+@@ -1324,6 +1317,7 @@
+     protected void exit() {}
  
+     protected void a(BooleanSupplier booleansupplier) {
++        long fullServerTickNanoTime = System.nanoTime(); // Chiyogami
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
+         this.slackActivityAccountant.tickStarted(); // Spigot
+         long i = SystemUtils.getMonotonicNanos();
+@@ -1419,6 +1413,7 @@
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+         this.slackActivityAccountant.tickEnded(l); // Spigot
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
++        PerformanceMonitor.setFullServerTickNanoTime(System.nanoTime() - fullServerTickNanoTime); // Chiyogami
+     }
+ 
+     protected void b(BooleanSupplier booleansupplier) {
+@@ -1464,51 +1459,78 @@
+         }
+         // Paper end
+         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
+-
++    
++        long worldServerTickNanoTime = System.nanoTime();
++        Map<org.bukkit.World, Long> worldThreadTimeMap = new ConcurrentHashMap<>();
          while (iterator.hasNext()) {
              WorldServer worldserver = (WorldServer) iterator.next();
 -            worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
@@ -433,6 +458,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -                CrashReport crashreport;
 +            
 +            Thread worldServerThread = new Thread(() -> {
++    
++                long worldServerThreadNanoTime = System.nanoTime();
 +    
 +                WorldThreadRunnable.worldThreadHeartBeat(worldserver.getWorld(), currentTick); // Chiyogami
 +                
@@ -485,6 +512,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 +                this.methodProfiler.exit();
 +                this.methodProfiler.exit();
 +                worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
++                worldThreadTimeMap.put(worldserver.getWorld(), System.nanoTime() - worldServerThreadNanoTime);
 +            });
 +    
 +            worldServerThread.setDaemon(true);
@@ -505,10 +533,12 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
          }
 +        worldServerThreads.clear();
++        PerformanceMonitor.setWorldTickNanoTimeMap(worldThreadTimeMap);
++        PerformanceMonitor.setAllWorldTickNanoTime(System.nanoTime() - worldServerTickNanoTime);
  
          this.methodProfiler.exitEnter("connection");
          MinecraftTimings.connectionTimer.startTiming(); // Spigot
-@@ -1583,7 +1594,7 @@
+@@ -1583,7 +1605,7 @@
      }
  
      public String getServerModName() {
@@ -517,7 +547,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -1966,7 +1977,7 @@
+@@ -1966,7 +1988,7 @@
              this.saveData.a(a(this.resourcePackRepository));
              datapackresources.i();
              new ServerResourcesReloadedEvent(cause).callEvent(); // Paper
@@ -526,7 +556,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              //this.getPlayerList().savePlayers(); // Paper - we don't need to do this
              this.getPlayerList().reload();
              this.customFunctionData.a(this.dataPackResources.a());
-@@ -2334,7 +2345,8 @@
+@@ -2334,7 +2356,8 @@
      // CraftBukkit start
      @Override
      public boolean isMainThread() {
