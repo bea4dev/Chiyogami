@@ -1,6 +1,6 @@
 diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java Chiyogami/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java
---- Original/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-08-22 21:27:54.234907200 +0900
-+++ Chiyogami/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-12 17:02:07.868437600 +0900
+--- Original/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-23 16:56:59.266471100 +0900
++++ Chiyogami/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-23 19:58:56.082582300 +0900
 @@ -28,6 +28,9 @@
  
  import java.util.ArrayDeque;
@@ -67,8 +67,8 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/
      }
  
 diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Chiyogami/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
---- Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-08-22 21:28:06.129962500 +0900
-+++ Chiyogami/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-06 05:28:37.238616400 +0900
+--- Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-23 16:57:10.939312500 +0900
++++ Chiyogami/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-23 19:49:17.759717000 +0900
 @@ -20,6 +20,7 @@
  import java.util.Map;
  import java.util.Set;
@@ -86,10 +86,11 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin
  
      public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
          server = instance;
-@@ -606,44 +609,49 @@
+@@ -605,45 +608,50 @@
+      */
      @Override
      public void callEvent(@NotNull Event event) {
-         // Paper - replace callEvent by merging to below method
+-        // Paper - replace callEvent by merging to below method
 -        if (event.isAsynchronous() && server.isPrimaryThread()) {
 -            throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
 -        } else if (!event.isAsynchronous() && !server.isPrimaryThread() && !server.isStopping() ) {
@@ -113,8 +114,9 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin
 -                    plugin.setNaggable(false);
 -
 -                    server.getLogger().log(Level.SEVERE, String.format(
++        EVENT_LOCK.lock();
 +        try {
-+            EVENT_LOCK.lock();
++            // Paper - replace callEvent by merging to below method
 +            if (event.isAsynchronous() && server.isPrimaryThread()) {
 +                throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
 +            } else if (!event.isAsynchronous() && !server.isPrimaryThread() && !server.isStopping()) {

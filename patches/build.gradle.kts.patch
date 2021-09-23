@@ -1,14 +1,14 @@
---- Original/Paper-Server/build.gradle.kts	2021-08-22 21:29:58.312951700 +0900
-+++ Chiyogami/Paper-Server/build.gradle.kts	2021-09-23 02:34:04.922655600 +0900
-@@ -25,6 +25,7 @@
-         }
+--- Original/Paper-Server/build.gradle.kts	2021-09-23 16:59:26.466421500 +0900
++++ Chiyogami/Paper-Server/build.gradle.kts	2021-09-23 17:52:23.704544800 +0900
+@@ -26,6 +26,7 @@
      }
      // Paper end
+     maven("https://repo.velocitypowered.com/snapshots/") // Paper
 +    maven("https://jitpack.io") // Chiyogami
  }
  
  dependencies {
-@@ -66,6 +67,8 @@
+@@ -68,6 +69,8 @@
      testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
      testImplementation("junit:junit:4.13.1")
      testImplementation("org.hamcrest:hamcrest-library:1.3")

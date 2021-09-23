@@ -1,7 +1,112 @@
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/io/papermc/paper/util/CachedLists.java Chiyogami/Paper-Server/src/main/java/io/papermc/paper/util/CachedLists.java
+--- Original/Paper-Server/src/main/java/io/papermc/paper/util/CachedLists.java	2021-09-23 16:59:22.804500100 +0900
++++ Chiyogami/Paper-Server/src/main/java/io/papermc/paper/util/CachedLists.java	2021-09-23 21:10:14.737204000 +0900
+@@ -5,14 +5,15 @@
+ import org.bukkit.Bukkit;
+ import org.bukkit.craftbukkit.util.UnsafeList;
+ import java.util.List;
++import java.util.concurrent.CopyOnWriteArrayList;
+ 
+ public final class CachedLists {
+ 
+     // Paper start - optimise collisions
+-    static final UnsafeList<AABB> TEMP_COLLISION_LIST = new UnsafeList<>(1024);
++    static final List<AABB> TEMP_COLLISION_LIST = new CopyOnWriteArrayList<>();
+     static boolean tempCollisionListInUse;
+ 
+-    public static UnsafeList<AABB> getTempCollisionList() {
++    public static List<AABB> getTempCollisionList() {
+         if (!Bukkit.isPrimaryThread() || tempCollisionListInUse) {
+             return new UnsafeList<>(16);
+         }
+@@ -24,14 +25,15 @@
+         if (list != TEMP_COLLISION_LIST) {
+             return;
+         }
+-        ((UnsafeList)list).setSize(0);
++        //((UnsafeList)list).setSize(0);
++        TEMP_COLLISION_LIST.clear();
+         tempCollisionListInUse = false;
+     }
+ 
+-    static final UnsafeList<Entity> TEMP_GET_ENTITIES_LIST = new UnsafeList<>(1024);
++    static final List<Entity> TEMP_GET_ENTITIES_LIST = new CopyOnWriteArrayList<>();
+     static boolean tempGetEntitiesListInUse;
+ 
+-    public static UnsafeList<Entity> getTempGetEntitiesList() {
++    public static List<Entity> getTempGetEntitiesList() {
+         if (!Bukkit.isPrimaryThread() || tempGetEntitiesListInUse) {
+             return new UnsafeList<>(16);
+         }
+@@ -43,15 +45,18 @@
+         if (list != TEMP_GET_ENTITIES_LIST) {
+             return;
+         }
+-        ((UnsafeList)list).setSize(0);
++        //((UnsafeList)list).setSize(0);
++        TEMP_GET_ENTITIES_LIST.clear();
+         tempGetEntitiesListInUse = false;
+     }
+     // Paper end - optimise collisions
+ 
+     public static void reset() {
+         // Paper start - optimise collisions
+-        TEMP_COLLISION_LIST.completeReset();
+-        TEMP_GET_ENTITIES_LIST.completeReset();
++        //TEMP_COLLISION_LIST.completeReset();
++        TEMP_COLLISION_LIST.clear();
++        TEMP_GET_ENTITIES_LIST.clear();
++        //TEMP_GET_ENTITIES_LIST.completeReset();
+         // Paper end - optimise collisions
+     }
+ }
+diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/io/papermc/paper/util/CollisionUtil.java Chiyogami/Paper-Server/src/main/java/io/papermc/paper/util/CollisionUtil.java
+--- Original/Paper-Server/src/main/java/io/papermc/paper/util/CollisionUtil.java	2021-09-23 16:59:22.807498300 +0900
++++ Chiyogami/Paper-Server/src/main/java/io/papermc/paper/util/CollisionUtil.java	2021-09-23 22:03:37.566717100 +0900
+@@ -213,27 +213,36 @@
+     }
+ 
+     public static double performCollisionsX(final AABB currentBoundingBox, double value, final List<AABB> potentialCollisions) {
+-        for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
++        /*for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
+             final AABB target = potentialCollisions.get(i);
+             value = collideX(target, currentBoundingBox, value);
++        }*/
++        for(AABB target : potentialCollisions){
++            value = collideX(target, currentBoundingBox, value);
+         }
+ 
+         return value;
+     }
+ 
+     public static double performCollisionsY(final AABB currentBoundingBox, double value, final List<AABB> potentialCollisions) {
+-        for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
++        /*for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
+             final AABB target = potentialCollisions.get(i);
+             value = collideY(target, currentBoundingBox, value);
++        }*/
++        for(AABB target : potentialCollisions){
++            value = collideY(target, currentBoundingBox, value);
+         }
+ 
+         return value;
+     }
+ 
+     public static double performCollisionsZ(final AABB currentBoundingBox, double value, final List<AABB> potentialCollisions) {
+-        for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
++        /*for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
+             final AABB target = potentialCollisions.get(i);
+             value = collideZ(target, currentBoundingBox, value);
++        }*/
++        for(AABB target : potentialCollisions){
++            value = collideZ(target, currentBoundingBox, value);
+         }
+ 
+         return value;
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java
---- Original/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java	2021-08-22 21:29:59.783266700 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java	2021-09-05 18:33:34.816156100 +0900
-@@ -34,13 +34,10 @@
+--- Original/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java	2021-09-23 16:59:24.663502500 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ChunkMap.java	2021-09-23 19:32:25.440541000 +0900
+@@ -34,12 +34,8 @@
  import java.util.Optional;
  import java.util.Queue;
  import java.util.Set;
@@ -13,28 +118,26 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -import java.util.concurrent.CompletionStage;
 -import java.util.concurrent.Executor;
  import java.util.concurrent.atomic.AtomicInteger;
-+import java.util.concurrent.locks.ReentrantLock;
  import java.util.function.BooleanSupplier;
  import java.util.function.Consumer;
- import java.util.function.IntFunction;
-@@ -104,6 +101,7 @@
- import org.apache.logging.log4j.Logger;
+@@ -104,6 +100,7 @@
  
  import org.bukkit.entity.Player; // CraftBukkit
+ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
 +import org.spigotmc.AsyncCatcher;
  
  public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider {
  
-@@ -145,7 +143,7 @@
+@@ -120,7 +117,7 @@
+     // Paper end - Don't copy
      public static final int FORCED_TICKET_LEVEL = 31;
-     // public final Long2ObjectLinkedOpenHashMap<ChunkHolder> updatingChunkMap = new Long2ObjectLinkedOpenHashMap(); // Paper - moved up
-     // public volatile Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunkMap; // Paper - moved up
+     // Paper - Don't copy
 -    private final Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads;
 +    private final Map<Long, ChunkHolder> pendingUnloads;
      public final LongSet entitiesInLevel;
      public final ServerLevel level;
      private final ThreadedLevelLightEngine lightEngine;
-@@ -172,7 +170,7 @@
+@@ -147,7 +144,7 @@
      public final StructureManager structureManager;
      private final String storageName;
      private final PlayerMap playerMap;
@@ -43,60 +146,10 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
      private final Long2ByteMap chunkTypeCache;
      private final Queue<Runnable> unloadQueue;
      int viewDistance;
-@@ -186,26 +184,37 @@
-         // it's possible to schedule multiple tasks currently, so it's vital we change this impl
-         // If we recurse into the executor again, we will append to another queue, ensuring task order consistency
-         private java.util.Queue<Runnable> queue = new java.util.ArrayDeque<>(); // Paper - remove final
-+        private final ReentrantLock LOCK = new ReentrantLock(true);
- 
-         @Override
-         public void execute(Runnable runnable) {
--            if (this.queue == null) {
--                this.queue = new java.util.ArrayDeque<>();
-+            try {
-+                LOCK.lock();
-+                if (this.queue == null) {
-+                    this.queue = new java.util.ArrayDeque<>();
-+                }
-+                this.queue.add(runnable);
-+            } finally {
-+                LOCK.unlock();
-             }
--            this.queue.add(runnable);
-         }
- 
-         @Override
-         public void run() {
--            if (this.queue == null) {
--                return;
--            }
--            java.util.Queue<Runnable> queue = this.queue;
--            this.queue = null;
--            // Paper end
--            Runnable task;
--            while ((task = queue.poll()) != null) { // Paper
--                task.run();
-+            try {
-+                LOCK.lock();
-+                if (this.queue == null) {
-+                    return;
-+                }
-+                java.util.Queue<Runnable> queue = this.queue;
-+                this.queue = null;
-+                // Paper end
-+                Runnable task;
-+                while ((task = queue.poll()) != null) { // Paper
-+                    task.run();
-+                }
-+            } finally {
-+                LOCK.unlock();
-             }
-         }
-     };
-@@ -341,12 +350,12 @@
+@@ -395,12 +392,12 @@
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
          super(new File(session.getDimensionPath(world.dimension()), "region"), dataFixer, dsync);
-         //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
+         // Paper - don't copy
 -        this.pendingUnloads = new Long2ObjectLinkedOpenHashMap();
 +        this.pendingUnloads = new ConcurrentHashMap<>();
          this.entitiesInLevel = new LongOpenHashSet();
@@ -108,25 +161,16 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
          this.chunkTypeCache = new Long2ByteOpenHashMap();
          this.unloadQueue = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper - need constant-time size()
          this.structureManager = structureManager;
-@@ -591,7 +600,7 @@
-         }
-     }
-     public Long2ObjectLinkedOpenHashMap<ChunkHolder> getVisibleChunks() {
--        if (Thread.currentThread() == this.level.thread) {
-+        if (!AsyncCatcher.isAsync()) {
-             return this.visibleChunkMap;
-         } else {
-             synchronized (this.visibleChunkMap) {
-@@ -608,7 +617,7 @@
+@@ -714,7 +711,7 @@
      @Nullable
      public ChunkHolder getVisibleChunkIfPresent(long pos) {
-         // Paper start - mt safe get
--        if (Thread.currentThread() != this.level.thread) {
-+        if (AsyncCatcher.isAsync()) {
-             synchronized (this.visibleChunkMap) {
-                 return (ChunkHolder) (this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.get(pos) : ((ProtectedVisibleChunksMap)this.visibleChunkMap).safeGet(pos));
-             }
-@@ -1866,7 +1875,7 @@
+         // Paper start - Don't copy
+-        if (Thread.currentThread() == this.level.thread) {
++        if (!AsyncCatcher.isAsync()) {
+             return this.updatingChunks.getVisible(pos);
+         }
+         return this.updatingChunks.getVisibleAsync(pos);
+@@ -2001,7 +1998,7 @@
                          ServerPlayer entityplayer = (ServerPlayer) entity;
  
                          this.updatePlayerStatus(entityplayer, true);
@@ -135,7 +179,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
                          while (objectiterator.hasNext()) {
                              ChunkMap.TrackedEntity playerchunkmap_entitytracker1 = (ChunkMap.TrackedEntity) objectiterator.next();
-@@ -1888,7 +1897,7 @@
+@@ -2023,7 +2020,7 @@
              ServerPlayer entityplayer = (ServerPlayer) entity;
  
              this.updatePlayerStatus(entityplayer, false);
@@ -144,7 +188,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
              while (objectiterator.hasNext()) {
                  ChunkMap.TrackedEntity playerchunkmap_entitytracker = (ChunkMap.TrackedEntity) objectiterator.next();
-@@ -1940,7 +1949,7 @@
+@@ -2075,7 +2072,7 @@
          List<ServerPlayer> list1 = this.level.players();
  
          ChunkMap.TrackedEntity playerchunkmap_entitytracker;
@@ -154,34 +198,99 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
          for (objectiterator = this.entityMap.values().iterator(); objectiterator.hasNext(); playerchunkmap_entitytracker.serverEntity.sendChanges()) {
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/level/DistanceManager.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/DistanceManager.java
---- Original/Paper-Server/src/main/java/net/minecraft/server/level/DistanceManager.java	2021-08-22 21:29:46.003662900 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/DistanceManager.java	2021-09-05 20:29:05.680316900 +0900
-@@ -26,6 +26,7 @@
+--- Original/Paper-Server/src/main/java/net/minecraft/server/level/DistanceManager.java	2021-09-23 16:59:23.391286800 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/DistanceManager.java	2021-09-23 23:59:13.447275500 +0900
+@@ -22,10 +22,13 @@
+ import java.io.IOException;
+ import java.nio.charset.StandardCharsets;
+ import java.util.Iterator;
++import java.util.Map;
+ import java.util.Objects;
  import java.util.Set;
  import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.ConcurrentHashMap;
  import java.util.concurrent.Executor;
 +import java.util.concurrent.locks.ReentrantLock;
  import javax.annotation.Nullable;
  import net.minecraft.core.SectionPos;
  import net.minecraft.util.SortedArraySet;
-@@ -376,6 +377,8 @@
+@@ -44,7 +47,7 @@
+     static final int PLAYER_TICKET_LEVEL = 33 + ChunkStatus.getDistance(ChunkStatus.FULL) - 2;
+     private static final int INITIAL_TICKET_LIST_CAPACITY = 4;
+     final Long2ObjectMap<ObjectSet<ServerPlayer>> playersPerChunk = new Long2ObjectOpenHashMap();
+-    public final Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
++    public final Map<Long, SortedArraySet<Ticket<?>>> tickets = new ConcurrentHashMap<>();
+     //private final DistanceManager.ChunkTicketTracker ticketTracker = new DistanceManager.ChunkTicketTracker(); // Paper - replace ticket level propagator
+     public static final int MOB_SPAWN_RANGE = 8; // private final ChunkMapDistance.b f = new ChunkMapDistance.b(8); // Paper - no longer used
+     //private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33); // Paper - no longer used
+@@ -120,15 +123,15 @@
+ 
+     protected void purgeStaleTickets() {
+         ++this.ticketTickCounter;
+-        ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
++        Iterator objectiterator = this.tickets.entrySet().iterator();
+ 
+         while (objectiterator.hasNext()) {
+-            Entry<SortedArraySet<Ticket<?>>> entry = (Entry) objectiterator.next();
++            Map.Entry<Long, SortedArraySet<Ticket<?>>> entry = (Map.Entry) objectiterator.next();
+ 
+             if ((entry.getValue()).removeIf((ticket) -> { // CraftBukkit - decompile error
+                 return ticket.timedOut(this.ticketTickCounter);
+             })) {
+-                this.updateTicketLevel(entry.getLongKey(), getTicketLevelAt(entry.getValue())); // Paper - replace ticket level propagator
++                this.updateTicketLevel(entry.getKey(), getTicketLevelAt(entry.getValue())); // Paper - replace ticket level propagator
+             }
+ 
+             if (((SortedArraySet) entry.getValue()).isEmpty()) {
+@@ -542,11 +545,11 @@
+             FileOutputStream fileoutputstream = new FileOutputStream(new File(s));
+ 
+             try {
+-                ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().iterator();
++                Iterator objectiterator = this.tickets.entrySet().iterator();
+ 
+                 while (objectiterator.hasNext()) {
+-                    Entry<SortedArraySet<Ticket<?>>> entry = (Entry) objectiterator.next();
+-                    ChunkPos chunkcoordintpair = new ChunkPos(entry.getLongKey());
++                    Map.Entry<Long, SortedArraySet<Ticket<?>>> entry = (Map.Entry) objectiterator.next();
++                    ChunkPos chunkcoordintpair = new ChunkPos(entry.getKey());
+                     Iterator iterator = ((SortedArraySet) entry.getValue()).iterator();
+ 
+                     while (iterator.hasNext()) {
+@@ -576,12 +579,12 @@
+     public <T> void removeAllTicketsFor(TicketType<T> ticketType, int ticketLevel, T ticketIdentifier) {
+         Ticket<T> target = new Ticket<>(ticketType, ticketLevel, ticketIdentifier);
+ 
+-        for (java.util.Iterator<Entry<SortedArraySet<Ticket<?>>>> iterator = this.tickets.long2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
+-            Entry<SortedArraySet<Ticket<?>>> entry = iterator.next();
++        for (java.util.Iterator<Map.Entry<Long, SortedArraySet<Ticket<?>>>> iterator = this.tickets.entrySet().iterator(); iterator.hasNext();) {
++            Map.Entry<Long, SortedArraySet<Ticket<?>>> entry = iterator.next();
+             SortedArraySet<Ticket<?>> tickets = entry.getValue();
+             if (tickets.remove(target)) {
+                 // copied from removeTicket
+-                this.updateTicketLevel(entry.getLongKey(), getTicketLevelAt(tickets)); // Paper - replace ticket level propagator
++                this.updateTicketLevel(entry.getKey(), getTicketLevelAt(tickets)); // Paper - replace ticket level propagator
+ 
+                 // can't use entry after it's removed
+                 if (tickets.isEmpty()) {
+@@ -593,6 +596,8 @@
      // CraftBukkit end
  
      private class ChunkTicketTracker extends ChunkTracker {
-+        
++    
 +        private final ReentrantLock LOCK = new ReentrantLock(true);
  
          public ChunkTicketTracker() {
              super(ChunkMap.MAX_CHUNK_DISTANCE + 2, 16, 256);
-@@ -383,40 +386,60 @@
+@@ -600,40 +605,60 @@
  
          @Override
          protected int getLevelFromSource(long id) {
 -            SortedArraySet<Ticket<?>> arraysetsorted = (SortedArraySet) DistanceManager.this.tickets.get(id);
 -
 -            return arraysetsorted == null ? Integer.MAX_VALUE : (arraysetsorted.isEmpty() ? Integer.MAX_VALUE : ((Ticket) arraysetsorted.first()).getTicketLevel());
++            LOCK.lock();
 +            try {
-+                LOCK.lock();
 +                SortedArraySet<Ticket<?>> arraysetsorted = (SortedArraySet) DistanceManager.this.tickets.get(id);
 +    
 +                return arraysetsorted == null ? Integer.MAX_VALUE : (arraysetsorted.isEmpty() ? Integer.MAX_VALUE : ((Ticket) arraysetsorted.first()).getTicketLevel());
@@ -197,8 +306,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -
 -                if (playerchunk != null) {
 -                    return playerchunk.getTicketLevel();
++            LOCK.lock();
 +            try {
-+                LOCK.lock();
 +                if (!DistanceManager.this.isChunkToRemove(id)) {
 +                    ChunkHolder playerchunk = DistanceManager.this.getChunk(id);
 +        
@@ -224,8 +333,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -                playerchunk = DistanceManager.this.updateChunkScheduling(id, level, playerchunk, k);
 -                if (playerchunk != null) {
 -                    DistanceManager.this.pendingChunkUpdates.add(playerchunk);
++            LOCK.lock();
 +            try {
-+                LOCK.lock();
 +                ChunkHolder playerchunk = DistanceManager.this.getChunk(id);
 +                int k = playerchunk == null ? ChunkMap.MAX_CHUNK_DISTANCE + 1 : playerchunk.getTicketLevel();
 +    
@@ -244,8 +353,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
          public int runDistanceUpdates(int distance) {
 -            return this.runUpdates(distance);
++            LOCK.lock();
 +            try {
-+                LOCK.lock();
 +                return this.runUpdates(distance);
 +            } finally {
 +                LOCK.unlock();
@@ -253,323 +362,9 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
          }
      }
  
-@@ -424,6 +447,8 @@
- 
-         protected final Long2ByteMap chunks = new Long2ByteOpenHashMap();
-         protected final int maxDistance;
-+        
-+        protected ReentrantLock LOCK = new ReentrantLock(true);
- 
-         protected FixedPlayerDistanceChunkTracker(int i) {
-             super(i + 2, 16, 256);
-@@ -433,68 +458,97 @@
- 
-         @Override
-         protected int getLevel(long id) {
--            return this.chunks.get(id);
-+            try {
-+                LOCK.lock();
-+                return this.chunks.get(id);
-+            } finally {
-+                LOCK.unlock();
-+            }
-         }
- 
-         @Override
-         protected void setLevel(long id, int level) {
--            byte b0;
--
--            if (level > this.maxDistance) {
--                b0 = this.chunks.remove(id);
--            } else {
--                b0 = this.chunks.put(id, (byte) level);
-+            try {
-+                LOCK.lock();
-+                byte b0;
-+    
-+                if (level > this.maxDistance) {
-+                    b0 = this.chunks.remove(id);
-+                } else {
-+                    b0 = this.chunks.put(id, (byte) level);
-+                }
-+    
-+                this.onLevelChange(id, b0, level);
-+            } finally {
-+                LOCK.unlock();
-             }
--
--            this.onLevelChange(id, b0, level);
-         }
- 
-         protected void onLevelChange(long pos, int oldDistance, int distance) {}
- 
-         @Override
-         protected int getLevelFromSource(long id) {
--            return this.havePlayer(id) ? 0 : Integer.MAX_VALUE;
-+            try {
-+                LOCK.lock();
-+                return this.havePlayer(id) ? 0 : Integer.MAX_VALUE;
-+            } finally {
-+                LOCK.unlock();
-+            }
-         }
- 
-         private boolean havePlayer(long chunkPos) {
--            ObjectSet<ServerPlayer> objectset = (ObjectSet) DistanceManager.this.playersPerChunk.get(chunkPos);
--
--            return objectset != null && !objectset.isEmpty();
-+            try {
-+                LOCK.lock();
-+                ObjectSet<ServerPlayer> objectset = (ObjectSet) DistanceManager.this.playersPerChunk.get(chunkPos);
-+    
-+                return objectset != null && !objectset.isEmpty();
-+            } finally {
-+                LOCK.unlock();
-+            }
-         }
- 
-         public void runAllUpdates() {
--            this.runUpdates(Integer.MAX_VALUE);
-+            try {
-+                LOCK.lock();
-+                this.runUpdates(Integer.MAX_VALUE);
-+            } finally {
-+                LOCK.unlock();
-+            }
-         }
- 
-         private void dumpChunks(String s) {
-             try {
--                FileOutputStream fileoutputstream = new FileOutputStream(new File(s));
--
-+                LOCK.lock();
-                 try {
--                    ObjectIterator objectiterator = this.chunks.long2ByteEntrySet().iterator();
--
--                    while (objectiterator.hasNext()) {
--                        it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry) objectiterator.next();
--                        ChunkPos chunkcoordintpair = new ChunkPos(it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey());
--                        String s1 = Byte.toString(it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue());
--
--                        fileoutputstream.write((chunkcoordintpair.x + "\t" + chunkcoordintpair.z + "\t" + s1 + "\n").getBytes(StandardCharsets.UTF_8));
--                    }
--                } catch (Throwable throwable) {
-+                    FileOutputStream fileoutputstream = new FileOutputStream(new File(s));
-+        
-                     try {
--                        fileoutputstream.close();
--                    } catch (Throwable throwable1) {
--                        throwable.addSuppressed(throwable1);
-+                        ObjectIterator objectiterator = this.chunks.long2ByteEntrySet().iterator();
-+            
-+                        while (objectiterator.hasNext()) {
-+                            it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry) objectiterator.next();
-+                            ChunkPos chunkcoordintpair = new ChunkPos(it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey());
-+                            String s1 = Byte.toString(it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue());
-+                
-+                            fileoutputstream.write((chunkcoordintpair.x + "\t" + chunkcoordintpair.z + "\t" + s1 + "\n").getBytes(StandardCharsets.UTF_8));
-+                        }
-+                    } catch (Throwable throwable) {
-+                        try {
-+                            fileoutputstream.close();
-+                        } catch (Throwable throwable1) {
-+                            throwable.addSuppressed(throwable1);
-+                        }
-+            
-+                        throw throwable;
-                     }
--
--                    throw throwable;
-+        
-+                    fileoutputstream.close();
-+                } catch (IOException ioexception) {
-+                    DistanceManager.LOGGER.error(ioexception);
-                 }
--
--                fileoutputstream.close();
--            } catch (IOException ioexception) {
--                DistanceManager.LOGGER.error(ioexception);
-+            } finally {
-+                LOCK.unlock();
-             }
--
-         }
-     }
- 
-@@ -511,86 +565,109 @@
- 
-         @Override
-         protected void onLevelChange(long pos, int oldDistance, int distance) {
--            this.toUpdate.add(pos);
-+            try {
-+                LOCK.lock();
-+                this.toUpdate.add(pos);
-+            } finally {
-+                LOCK.unlock();
-+            }
-         }
- 
-         public void updateViewDistance(int watchDistance) {
--            ObjectIterator objectiterator = this.chunks.long2ByteEntrySet().iterator();
--
--            while (objectiterator.hasNext()) {
--                it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry) objectiterator.next();
--                byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
--                long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
--
--                this.onLevelChange(j, b0, this.haveTicketFor(b0), b0 <= watchDistance - 2);
-+            try {
-+                LOCK.lock();
-+                ObjectIterator objectiterator = this.chunks.long2ByteEntrySet().iterator();
-+    
-+                while (objectiterator.hasNext()) {
-+                    it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry) objectiterator.next();
-+                    byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
-+                    long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
-+        
-+                    this.onLevelChange(j, b0, this.haveTicketFor(b0), b0 <= watchDistance - 2);
-+                }
-+    
-+                this.viewDistance = watchDistance;
-+            } finally {
-+                LOCK.unlock();
-             }
--
--            this.viewDistance = watchDistance;
-         }
- 
-         private void onLevelChange(long pos, int distance, boolean oldWithinViewDistance, boolean withinViewDistance) {
--            if (oldWithinViewDistance != withinViewDistance) {
--                Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, new ChunkPos(pos)); // Paper - no-tick view distance
--
--                if (withinViewDistance) {
--                    DistanceManager.this.ticketThrottlerInput.tell(ChunkTaskPriorityQueueSorter.message(() -> {
--                        DistanceManager.this.mainThreadExecutor.execute(() -> {
--                            if (this.haveTicketFor(this.getLevel(pos))) {
--                                DistanceManager.this.addTicket(pos, ticket);
--                                DistanceManager.this.ticketsToRelease.add(pos);
--                            } else {
--                                DistanceManager.this.ticketThrottlerReleaser.tell(ChunkTaskPriorityQueueSorter.release(() -> {
--                                }, pos, false));
--                            }
--
--                        });
--                    }, pos, () -> {
--                        return distance;
--                    }));
--                } else {
--                    DistanceManager.this.ticketThrottlerReleaser.tell(ChunkTaskPriorityQueueSorter.release(() -> {
--                        DistanceManager.this.mainThreadExecutor.execute(() -> {
--                            DistanceManager.this.removeTicket(pos, ticket);
--                        });
--                    }, pos, true));
-+            try {
-+                LOCK.lock();
-+                if (oldWithinViewDistance != withinViewDistance) {
-+                    Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, new ChunkPos(pos)); // Paper - no-tick view distance
-+        
-+                    if (withinViewDistance) {
-+                        DistanceManager.this.ticketThrottlerInput.tell(ChunkTaskPriorityQueueSorter.message(() -> {
-+                            DistanceManager.this.mainThreadExecutor.execute(() -> {
-+                                if (this.haveTicketFor(this.getLevel(pos))) {
-+                                    DistanceManager.this.addTicket(pos, ticket);
-+                                    DistanceManager.this.ticketsToRelease.add(pos);
-+                                } else {
-+                                    DistanceManager.this.ticketThrottlerReleaser.tell(ChunkTaskPriorityQueueSorter.release(() -> {
-+                                    }, pos, false));
-+                                }
-+                    
-+                            });
-+                        }, pos, () -> {
-+                            return distance;
-+                        }));
-+                    } else {
-+                        DistanceManager.this.ticketThrottlerReleaser.tell(ChunkTaskPriorityQueueSorter.release(() -> {
-+                            DistanceManager.this.mainThreadExecutor.execute(() -> {
-+                                DistanceManager.this.removeTicket(pos, ticket);
-+                            });
-+                        }, pos, true));
-+                    }
-                 }
-+            } finally {
-+                LOCK.unlock();
-             }
--
-         }
- 
-         @Override
-         public void runAllUpdates() {
--            super.runAllUpdates();
--            if (!this.toUpdate.isEmpty()) {
--                LongIterator longiterator = this.toUpdate.iterator();
--
--                while (longiterator.hasNext()) {
--                    long i = longiterator.nextLong();
--                    int j = this.queueLevels.get(i);
--                    int k = this.getLevel(i);
--
--                    if (j != k) {
--                        DistanceManager.this.ticketThrottler.onLevelChange(new ChunkPos(i), () -> {
--                            return this.queueLevels.get(i);
--                        }, k, (l) -> {
--                            if (l >= this.queueLevels.defaultReturnValue()) {
--                                this.queueLevels.remove(i);
--                            } else {
--                                this.queueLevels.put(i, l);
--                            }
--
--                        });
--                        this.onLevelChange(i, k, this.haveTicketFor(j), this.haveTicketFor(k));
-+            try {
-+                LOCK.lock();
-+                super.runAllUpdates();
-+                if (!this.toUpdate.isEmpty()) {
-+                    LongIterator longiterator = this.toUpdate.iterator();
-+        
-+                    while (longiterator.hasNext()) {
-+                        long i = longiterator.nextLong();
-+                        int j = this.queueLevels.get(i);
-+                        int k = this.getLevel(i);
-+            
-+                        if (j != k) {
-+                            DistanceManager.this.ticketThrottler.onLevelChange(new ChunkPos(i), () -> {
-+                                return this.queueLevels.get(i);
-+                            }, k, (l) -> {
-+                                if (l >= this.queueLevels.defaultReturnValue()) {
-+                                    this.queueLevels.remove(i);
-+                                } else {
-+                                    this.queueLevels.put(i, l);
-+                                }
-+                    
-+                            });
-+                            this.onLevelChange(i, k, this.haveTicketFor(j), this.haveTicketFor(k));
-+                        }
-                     }
-+        
-+                    this.toUpdate.clear();
-                 }
--
--                this.toUpdate.clear();
-+            } finally {
-+                LOCK.unlock();
-             }
--
-         }
- 
-         private boolean haveTicketFor(int distance) {
--            return distance <= this.viewDistance - 2;
-+            try {
-+                LOCK.lock();
-+                return distance <= this.viewDistance - 2;
-+            } finally {
-+                LOCK.unlock();
-+            }
-         }
-     }
- }
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java
---- Original/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java	2021-08-22 21:29:53.475034400 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java	2021-08-22 22:05:38.100173900 +0900
+--- Original/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java	2021-09-23 16:59:24.014872800 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ServerChunkCache.java	2021-09-23 19:07:26.092678500 +0900
 @@ -45,6 +45,7 @@
  import net.minecraft.world.level.storage.LevelData;
  import net.minecraft.world.level.storage.LevelStorageSource;
@@ -577,9 +372,9 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 +import org.spigotmc.AsyncCatcher;
  
  public class ServerChunkCache extends ChunkSource {
- 
-@@ -141,7 +142,7 @@
-     private long chunkFutureAwaitCounter;
+     public static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger(); // Paper
+@@ -142,7 +143,7 @@
+     long chunkFutureAwaitCounter; // Paper - private -> package private
  
      public void getEntityTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
 -        if (Thread.currentThread() != this.mainThread) {
@@ -587,7 +382,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              this.mainThreadProcessor.execute(() -> {
                  ServerChunkCache.this.getEntityTickingChunkAsync(x, z, onLoad);
              });
-@@ -151,7 +152,7 @@
+@@ -152,7 +153,7 @@
      }
  
      public void getTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
@@ -596,7 +391,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              this.mainThreadProcessor.execute(() -> {
                  ServerChunkCache.this.getTickingChunkAsync(x, z, onLoad);
              });
-@@ -161,7 +162,7 @@
+@@ -162,7 +163,7 @@
      }
  
      public void getFullChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
@@ -605,7 +400,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              this.mainThreadProcessor.execute(() -> {
                  ServerChunkCache.this.getFullChunkAsync(x, z, onLoad);
              });
-@@ -171,7 +172,7 @@
+@@ -172,7 +173,7 @@
      }
  
      private void getChunkFutureAsynchronously(int x, int z, int ticketLevel, Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>> futureGet, java.util.function.Consumer<LevelChunk> onLoad) {
@@ -614,7 +409,16 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              throw new IllegalStateException();
          }
          ChunkPos chunkPos = new ChunkPos(x, z);
-@@ -312,7 +313,7 @@
+@@ -274,7 +275,7 @@
+     void getChunkAtAsynchronously(int chunkX, int chunkZ, int ticketLevel,
+                                   java.util.function.Function<ChunkHolder, CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> function,
+                                   java.util.function.Consumer<ChunkAccess> consumer) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             throw new IllegalStateException();
+         }
+ 
+@@ -471,7 +472,7 @@
      public LevelChunk getChunkAtIfLoadedImmediately(int x, int z) {
          long k = ChunkPos.asLong(x, z);
  
@@ -623,7 +427,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              return this.getChunkAtIfLoadedMainThread(x, z);
          }
  
-@@ -348,7 +349,7 @@
+@@ -507,7 +508,7 @@
      private long asyncLoadSeqCounter;
  
      public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkAtAsynchronously(int x, int z, boolean gen, boolean isUrgent) {
@@ -632,7 +436,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = new CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>();
              this.mainThreadProcessor.execute(() -> {
                  this.getChunkAtAsynchronously(x, z, gen, isUrgent).whenComplete((chunk, ex) -> {
-@@ -457,7 +458,7 @@
+@@ -636,7 +637,7 @@
      @Override
      public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
          final int x1 = x; final int z1 = z; // Paper - conflict on variable change
@@ -641,7 +445,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              return (ChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunk(x, z, leastStatus, create);
              }, this.mainThreadProcessor).join();
-@@ -517,7 +518,7 @@
+@@ -700,7 +701,7 @@
      @Nullable
      @Override
      public LevelChunk getChunkNow(int chunkX, int chunkZ) {
@@ -650,7 +454,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              return null;
          } else {
              return this.getChunkAtIfLoadedMainThread(chunkX, chunkZ); // Paper - optimise for loaded chunks
-@@ -531,7 +532,7 @@
+@@ -714,7 +715,7 @@
      }
  
      public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFuture(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
@@ -660,8 +464,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
          if (flag1) {
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/level/ServerLevel.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ServerLevel.java
---- Original/Paper-Server/src/main/java/net/minecraft/server/level/ServerLevel.java	2021-08-22 21:29:58.407897400 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ServerLevel.java	2021-09-05 16:39:48.000085900 +0900
+--- Original/Paper-Server/src/main/java/net/minecraft/server/level/ServerLevel.java	2021-09-23 16:59:24.668499300 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/level/ServerLevel.java	2021-09-23 19:41:16.194079300 +0900
 @@ -19,13 +19,9 @@
  import java.io.Writer;
  import java.nio.file.Files;
@@ -679,7 +483,15 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  import java.util.concurrent.Executor;
  import java.util.function.BooleanSupplier;
  import java.util.function.Function;
-@@ -186,7 +182,7 @@
+@@ -162,6 +158,7 @@
+ import org.bukkit.event.world.TimeSkipEvent;
+ // CraftBukkit end
+ import it.unimi.dsi.fastutil.ints.IntArrayList; // Paper
++import org.spigotmc.AsyncCatcher;
+ 
+ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+@@ -187,7 +184,7 @@
      private final List<CustomSpawner> customSpawners;
      @Nullable
      private final EndDragonFight dragonFight;
@@ -687,8 +499,17 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 +    final Map<Integer, EnderDragonPart> dragonParts;
      private final StructureFeatureManager structureFeatureManager;
      private final boolean tickTime;
+     // Paper start - execute chunk tasks mid tick
+@@ -240,7 +237,7 @@
  
-@@ -309,7 +305,7 @@
+     public final void loadChunksForMoveAsync(AABB axisalignedbb, double toX, double toZ,
+                                              java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
+-        if (Thread.currentThread() != this.thread) {
++        if (AsyncCatcher.isAsync()) {
+             this.getChunkSource().mainThreadProcessor.execute(() -> {
+                 this.loadChunksForMoveAsync(axisalignedbb, toX, toZ, onLoad);
+             });
+@@ -478,7 +475,7 @@
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelPath.toFile());
          // CraftBukkit end
@@ -697,7 +518,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
          this.entityTickList = new EntityTickList();
          Predicate<Block> predicate = (block) -> { // CraftBukkit - decompile eror
              return block == null || block.defaultBlockState().isAir();
-@@ -330,9 +326,9 @@
+@@ -499,9 +496,9 @@
              this.blockTicks = new ServerTickList<>(this, predicate, Registry.BLOCK::getKey, this::tickBlock, "Blocks"); // CraftBukkit - decompile error // Paper - Timings & copied from above
          this.liquidTicks = new ServerTickList<>(this, predicate2, Registry.FLUID::getKey, this::tickLiquid, "Fluids"); // CraftBukkit - decompile error // Paper - Timings
          }
@@ -710,8 +531,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
          this.server = minecraftserver;
          this.customSpawners = list;
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java
---- Original/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-08-22 21:29:43.175229700 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-08-22 22:05:38.168134200 +0900
+--- Original/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-09-23 16:59:24.591542900 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-09-23 18:27:37.151415700 +0900
 @@ -320,7 +320,7 @@
       * @return
       */
@@ -731,8 +552,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
                  new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
              }
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java
---- Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-08-22 21:29:57.318730900 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-23 02:36:50.897178800 +0900
+--- Original/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-23 16:59:22.976850500 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-23 21:32:15.891449500 +0900
 @@ -31,22 +31,10 @@
  import java.nio.file.Path;
  import java.security.KeyPair;
@@ -758,36 +579,33 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  import java.util.concurrent.Executor;
  import java.util.concurrent.atomic.AtomicReference;
  import java.util.function.BooleanSupplier;
-@@ -185,7 +173,10 @@
- // CraftBukkit end
+@@ -188,6 +176,8 @@
  
  import co.aikar.timings.MinecraftTimings; // Paper
-+import org.spigotmc.AsyncCatcher;
  import org.spigotmc.SlackActivityAccountant; // Spigot
 +import world.chiyogami.chiyogamilib.monitor.PerformanceMonitor;
 +import world.chiyogami.chiyogamilib.scheduler.WorldThreadRunnable;
  
  public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements SnooperPopulator, CommandSource, AutoCloseable {
  
-@@ -306,6 +297,8 @@
-     public final double[] recentTps = new double[ 3 ];
+@@ -309,6 +299,8 @@
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
+     public static long currentTickLong = 0L; // Paper
 +    
 +    public final Map<org.bukkit.World, Thread> worldServerThreads = new HashMap<>(); // Chiyogami
  
      public volatile Thread shutdownThread; // Paper
      public volatile boolean abnormalExit = false; // Paper
-@@ -1287,7 +1280,7 @@
-     public int midTickChunksTasksRan = 0;
-     private long midTickLastRan = 0;
-     public void midTickLoadChunks() {
--        if (!isSameThread() || System.nanoTime() - midTickLastRan < 1000000) {
-+        if (Thread.currentThread() != this.serverThread || System.nanoTime() - midTickLastRan < 1000000) {
-             // only check once per 0.25ms incase this code is called in a hot method
-             return;
-         }
-@@ -1388,6 +1381,7 @@
+@@ -361,6 +353,7 @@
+ 
+     public final void executeMidTickTasks() {
+         org.spigotmc.AsyncCatcher.catchOp("mid tick chunk task execution");
++        if(Thread.currentThread() != this.serverThread) return;
+         long startTime = System.nanoTime();
+         if ((startTime - lastMidTickExecute) <= CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME || (startTime - lastMidTickExecuteFailure) <= TASK_EXECUTION_FAILURE_BACKOFF) {
+             // it's shown to be bad to constantly hit the queue (chunk loads slow to a crawl), even if no tasks are executed.
+@@ -1458,6 +1451,7 @@
      public void onServerExit() {}
  
      public void tickServer(BooleanSupplier shouldKeepTicking) {
@@ -795,7 +613,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
          co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
          this.slackActivityAccountant.tickStarted(); // Spigot
          long i = Util.getNanos();
-@@ -1482,6 +1476,7 @@
+@@ -1552,6 +1546,7 @@
          org.spigotmc.WatchdogThread.tick(); // Spigot
          this.slackActivityAccountant.tickEnded(l); // Spigot
          co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
@@ -803,7 +621,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
      }
  
      public void tickChildren(BooleanSupplier shouldKeepTicking) {
-@@ -1527,16 +1522,25 @@
+@@ -1594,16 +1589,25 @@
          }
          // Paper end
          MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
@@ -822,11 +640,11 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -            });
 +            
 +            Thread worldServerThread = new Thread(() -> {
-+    
++                
 +                long worldServerThreadNanoTime = System.nanoTime();
-+                
++    
 +                WorldThreadRunnable.worldThreadHeartBeat(worldserver.getWorld(), currentTick);
-+                
++    
 +                worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
 +                worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
 +                net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
@@ -837,7 +655,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
              /* Drop global time updates
              if (this.tickCount % 20 == 0) {
                  this.profiler.enter("timeSync");
-@@ -1544,34 +1548,52 @@
+@@ -1611,37 +1615,63 @@
                  this.profiler.exit();
              }
              // CraftBukkit end */
@@ -845,11 +663,14 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -            this.profiler.push("tick");
 -
 -            try {
--                midTickLoadChunks(); // Paper
 -                worldserver.timings.doTick.startTiming(); // Spigot
 -                worldserver.tick(shouldKeepTicking);
+-                // Paper start
+-                for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
+-                    regionManager.recalculateRegions();
+-                }
+-                // Paper end
 -                worldserver.timings.doTick.stopTiming(); // Spigot
--                midTickLoadChunks(); // Paper
 -            } catch (Throwable throwable) {
 -                // Spigot Start
 -                CrashReport crashreport;
@@ -861,11 +682,14 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -                } catch (Throwable t) {
 -                    if (throwable instanceof ThreadDeath) { throw (ThreadDeath)throwable; } // Paper
 -                    throw new RuntimeException("Error generating crash report", t);
-+                    midTickLoadChunks(); // Paper
 +                    worldserver.timings.doTick.startTiming(); // Spigot
 +                    worldserver.tick(shouldKeepTicking);
++                    // Paper start
++                    for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
++                        regionManager.recalculateRegions();
++                    }
++                    // Paper end
 +                    worldserver.timings.doTick.stopTiming(); // Spigot
-+                    midTickLoadChunks(); // Paper
 +                } catch (Throwable throwable) {
 +                    // Spigot Start
 +                    CrashReport crashreport;
@@ -896,7 +720,6 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 +            worldServerThread.start();
 +        }
 +    
-+    
 +        for(Thread thread : worldServerThreads.values()){
 +            try {
 +                thread.join();
@@ -909,42 +732,32 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 -            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
          }
 +        worldServerThreads.clear();
++        /*
++        while (iterator.hasNext()) {
++            ServerLevel worldserver = (ServerLevel) iterator.next();
++            for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
++                regionManager.recalculateRegions();
++            }
++        }*/
++        
 +        PerformanceMonitor.setWorldTickNanoTimeMap(worldThreadTimeMap);
 +        PerformanceMonitor.setAllWorldTickNanoTime(System.nanoTime() - worldServerTickNanoTime);
++        
  
          this.profiler.popPush("connection");
          MinecraftTimings.connectionTimer.startTiming(); // Spigot
-@@ -1651,7 +1673,7 @@
+@@ -1721,7 +1751,7 @@
  
      @DontObfuscate
      public String getServerModName() {
--        return "Paper"; //Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
-+        return "Chiyogami"; //Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla! // Chiyogami
+-        return "Paper"; // Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
++        return "Chiyogami"; // Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -2047,7 +2069,7 @@
-             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
-             datapackresources.updateGlobals();
-             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
--            if (Thread.currentThread() != this.serverThread) return; // Paper
-+            if (AsyncCatcher.isAsync()) return; // Paper
-             //this.getPlayerList().savePlayers(); // Paper - we don't need to do this
-             this.getPlayerList().reloadResources();
-             this.functionManager.replaceLibrary(this.resources.getFunctionLibrary());
-@@ -2394,7 +2416,8 @@
-     // CraftBukkit start
-     @Override
-     public boolean isSameThread() {
--        return super.isSameThread() /*|| this.isStopped()*/; // CraftBukkit - MC-142590 // Paper - causes issues elsewhere
-+        //return super.isSameThread() /*|| this.isStopped()*/; // CraftBukkit - MC-142590 // Paper - causes issues elsewhere
-+        return !AsyncCatcher.isAsync(); // Chiyogami
-     }
- 
-     public boolean isDebugging() {
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java Chiyogami/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
---- Original/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java	2021-08-22 21:29:43.609981400 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java	2021-08-22 22:05:38.161138900 +0900
+--- Original/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java	2021-09-23 16:59:03.745711800 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java	2021-09-23 18:34:14.322860400 +0900
 @@ -15,6 +15,7 @@
  import net.minecraft.util.profiling.metrics.ProfilerMeasured;
  import org.apache.logging.log4j.LogManager;
@@ -963,8 +776,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
      protected abstract Thread getRunningThread();
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java
---- Original/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java	2021-08-22 21:29:42.032046300 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java	2021-08-27 01:34:16.944126000 +0900
+--- Original/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java	2021-09-23 16:59:02.119643900 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/entity/EntitySection.java	2021-09-23 19:20:25.673640400 +0900
 @@ -1,5 +1,10 @@
  package net.minecraft.world.level.entity;
  
@@ -987,18 +800,18 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
 +                try {
 +                    Field byClass = classInstanceMultiMapClass.getDeclaredField("a");
 +                    Map<Class<?>, List<T>> newMap = new ConcurrentHashMap<>();
-+                    
++                
 +                    Field allInstances = classInstanceMultiMapClass.getDeclaredField("c");
 +                    List<T> newList = new CopyOnWriteArrayList<>();
-+                    
++                
 +                    byClass.setAccessible(true);
 +                    allInstances.setAccessible(true);
-+                    
++                
 +                    newMap.put(entityClass, newList);
-+                    
++                
 +                    byClass.set(this, newMap);
 +                    allInstances.set(this, newList);
-+    
++                
 +                } catch (Exception e) {
 +                    e.printStackTrace();
 +                }
@@ -1008,8 +821,8 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
      public void add(T obj) {
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/world/level/Level.java Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/Level.java
---- Original/Paper-Server/src/main/java/net/minecraft/world/level/Level.java	2021-08-22 21:29:58.418893900 +0900
-+++ Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/Level.java	2021-08-22 22:05:38.109168100 +0900
+--- Original/Paper-Server/src/main/java/net/minecraft/world/level/Level.java	2021-09-23 16:59:24.530577700 +0900
++++ Chiyogami/Paper-Server/src/main/java/net/minecraft/world/level/Level.java	2021-09-23 19:18:29.784555700 +0900
 @@ -98,6 +98,7 @@
  import org.bukkit.craftbukkit.util.CraftNamespacedKey;
  import org.bukkit.event.block.BlockPhysicsEvent;
@@ -1018,7 +831,16 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  // CraftBukkit end
  
  public abstract class Level implements LevelAccessor, AutoCloseable {
-@@ -919,7 +920,7 @@
+@@ -474,7 +475,7 @@
+     public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
+         // Paper start - make sure loaded chunks get the inlined variant of this function
+         net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
+-        if (cps.mainThread == Thread.currentThread()) {
++        if (!AsyncCatcher.isAsync()) {
+             LevelChunk ifLoaded = cps.getChunkAtIfLoadedMainThread(chunkX, chunkZ);
+             if (ifLoaded != null) {
+                 return ifLoaded;
+@@ -1037,7 +1038,7 @@
          }
          // Paper end
          // CraftBukkit end
@@ -1028,9 +850,9 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/net/minecraft/
  
      public void setBlockEntity(BlockEntity blockEntity) {
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java
---- Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-08-22 21:29:59.057153000 +0900
-+++ Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-08-22 22:05:38.137152600 +0900
-@@ -230,6 +230,7 @@
+--- Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-09-23 16:59:20.615226200 +0900
++++ Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-09-23 19:45:15.069955500 +0900
+@@ -236,6 +236,7 @@
  import org.bukkit.scheduler.BukkitWorker;
  import org.bukkit.util.StringUtil;
  import org.bukkit.util.permissions.DefaultPermissions;
@@ -1038,7 +860,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/cra
  import org.yaml.snakeyaml.Yaml;
  import org.yaml.snakeyaml.constructor.SafeConstructor;
  import org.yaml.snakeyaml.error.MarkedYAMLException;
-@@ -240,7 +241,7 @@
+@@ -246,7 +247,7 @@
  import javax.annotation.Nonnull; // Paper
  
  public final class CraftServer implements Server {
@@ -1047,7 +869,7 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/cra
      private final String serverVersion;
      private final String bukkitVersion = Versioning.getBukkitVersion();
      private final Logger logger = Logger.getLogger("Minecraft");
-@@ -2019,7 +2020,7 @@
+@@ -2075,7 +2076,7 @@
  
      @Override
      public boolean isPrimaryThread() {
@@ -1057,36 +879,48 @@ diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/cra
  
      // Paper start
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
---- Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-08-22 21:29:57.908182900 +0900
-+++ Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-08-22 22:05:38.155142600 +0900
-@@ -257,6 +257,7 @@
+--- Original/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-09-23 16:59:23.287346100 +0900
++++ Chiyogami/Paper-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-09-23 23:53:18.178258700 +0900
+@@ -114,6 +114,7 @@
  import org.bukkit.util.Consumer;
  import org.bukkit.util.RayTraceResult;
  import org.bukkit.util.Vector;
 +import org.spigotmc.AsyncCatcher;
  
- public class CraftWorld implements World {
+ public class CraftWorld extends CraftRegionAccessor implements World {
      public static final int CUSTOM_DIMENSION_OFFSET = 10;
-@@ -486,7 +487,7 @@
+@@ -342,7 +343,7 @@
      @Override
      public Chunk[] getLoadedChunks() {
          // Paper start
 -        if (Thread.currentThread() != world.getLevel().thread) {
 +        if (AsyncCatcher.isAsync()) {
-             synchronized (world.getChunkSource().chunkMap.visibleChunkMap) {
-                 Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = world.getChunkSource().chunkMap.visibleChunkMap;
-                 return chunks.values().stream().map(ChunkHolder::getFullChunk).filter(Objects::nonNull).map(net.minecraft.world.level.chunk.LevelChunk::getBukkitChunk).toArray(Chunk[]::new);
+             // Paper start - change updating chunks map
+             Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks;
+             synchronized (world.getChunkSource().chunkMap.updatingChunks) {
+@@ -572,8 +573,8 @@
+         Map<Plugin, ImmutableList.Builder<Chunk>> ret = new HashMap<>();
+         DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
+ 
+-        for (Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
+-            long chunkKey = chunkTickets.getLongKey();
++        for (Map.Entry<Long, SortedArraySet<Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.entrySet()) {
++            long chunkKey = chunkTickets.getKey();
+             SortedArraySet<Ticket<?>> tickets = chunkTickets.getValue();
+ 
+             Chunk chunk = null;
 diff --strip-trailing-cr -urN Original/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java Chiyogami/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java
---- Original/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-08-22 21:29:25.658390500 +0900
-+++ Chiyogami/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-09-05 16:30:25.378424700 +0900
-@@ -10,9 +10,16 @@
+--- Original/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-09-23 16:59:22.212752700 +0900
++++ Chiyogami/Paper-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-09-23 18:23:12.535848500 +0900
+@@ -10,10 +10,17 @@
  
      public static void catchOp(String reason)
      {
--        if ( AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread )
-+        if ( AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread
+-        if ( (AsyncCatcher.enabled || io.papermc.paper.util.TickThread.STRICT_THREAD_CHECKS) && Thread.currentThread() != MinecraftServer.getServer().serverThread ) // Paper
++        if ( (AsyncCatcher.enabled || io.papermc.paper.util.TickThread.STRICT_THREAD_CHECKS) && Thread.currentThread() != MinecraftServer.getServer().serverThread
 +            && !MinecraftServer.getServer().worldServerThreads.containsValue(Thread.currentThread())) // Chiyogami
          {
+             MinecraftServer.LOGGER.fatal("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable()); // Paper
              throw new IllegalStateException( "Asynchronous " + reason + "!" );
          }
      }
