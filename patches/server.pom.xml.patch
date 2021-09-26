@@ -1,0 +1,24 @@
+--- Original/Tuinity-Server/pom.xml	2021-09-26 18:20:17.987445800 +0900
++++ Chiyogami/Tuinity-Server/pom.xml	2021-09-26 21:26:09.311531100 +0900
+@@ -193,8 +193,21 @@
+             <version>1.1.0-SNAPSHOT</version>
+             <scope>compile</scope>
+         </dependency>
++        <dependency>
++            <groupId>com.github.Be4rJP</groupId>
++            <artifactId>ChiyogamiLib</artifactId>
++            <version>ae2e59f252</version>
++            <scope>compile</scope>
++        </dependency>
+     </dependencies>
+ 
++    <repositories>
++        <repository>
++            <id>jitpack.io</id>
++            <url>https://jitpack.io</url>
++        </repository>
++    </repositories>
++
+     <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
+     <build>
+         <finalName>tuinity-${minecraft.version}</finalName>

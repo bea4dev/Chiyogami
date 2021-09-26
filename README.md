@@ -1,7 +1,7 @@
 Chiyogami-Server-1.16.5
 ===========
 
-Chiyogami-Serverは [Paper](https://github.com/PaperMC/Paper) をフォークしたものであり、Spigotプラグインを動作させつつマルチスレッド実行を可能とするMinecraftサーバーソフトです。
+Chiyogami-Serverは [Tuinity](https://github.com/Tuinity/Tuinity) をフォークしたものであり、Spigotプラグインを動作させつつマルチスレッド実行を可能とするMinecraftサーバーソフトです。
 
 Other version
 ------
