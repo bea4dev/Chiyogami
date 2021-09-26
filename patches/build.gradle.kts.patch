@@ -1,5 +1,5 @@
 --- Original/Paper-Server/build.gradle.kts	2021-09-23 16:59:26.466421500 +0900
-+++ Chiyogami/Paper-Server/build.gradle.kts	2021-09-23 17:52:23.704544800 +0900
++++ Chiyogami/Paper-Server/build.gradle.kts	2021-09-26 16:24:10.689133700 +0900
 @@ -26,6 +26,7 @@
      }
      // Paper end
@@ -13,7 +13,7 @@
      testImplementation("junit:junit:4.13.1")
      testImplementation("org.hamcrest:hamcrest-library:1.3")
 +
-+    implementation("com.github.Be4rJP:ChiyogamiLib:6694a80cb2") // Chiyogami
++    implementation("com.github.Be4rJP:ChiyogamiLib:5ede268fa8") // Chiyogami
  }
  
  tasks.jar {
