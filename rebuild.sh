@@ -5,8 +5,8 @@ echo
 
 cd Chiyogami/
 
-mvn clean install
+./tuinity build
 
 cd ../
 
-cp -f Chiyogami/Paper-Server/target/paper-1.16.5.jar Chiyogami-1.16.5.jar
+cp -f Chiyogami/Tuinity-Server/target/tuinity-1.16.5.jar Chiyogami-1.16.5.jar

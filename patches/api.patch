@@ -1,7 +1,7 @@
-diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java Paper-API/src/main/java/co/aikar/timings/TimingHandler.java
---- Original/Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-08-21 18:24:48.774117400 +0900
-+++ Paper-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-12 16:49:11.331305200 +0900
-@@ -28,6 +28,9 @@
+diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java
+--- Original/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-26 18:20:00.194237100 +0900
++++ Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-26 21:55:47.321367800 +0900
+@@ -28,34 +28,41 @@
  
  import java.util.ArrayDeque;
  import java.util.Deque;
@@ -11,44 +11,212 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/
  import java.util.concurrent.atomic.AtomicInteger;
  import java.util.logging.Level;
  import java.util.logging.Logger;
-@@ -39,13 +42,13 @@
- class TimingHandler implements Timing {
  
-     private static AtomicInteger idPool = new AtomicInteger(1);
+ import org.bukkit.Bukkit;
++import org.bukkit.World;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++import world.chiyogami.chiyogamilib.WorldThreads;
+ 
+-class TimingHandler implements Timing {
++public class TimingHandler implements Timing {
+ 
+-    private static AtomicInteger idPool = new AtomicInteger(1);
 -    private static Deque<TimingHandler> TIMING_STACK = new ArrayDeque<>();
-+    private static Deque<TimingHandler> TIMING_STACK = new ConcurrentLinkedDeque<>();
++    protected static AtomicInteger idPool = new AtomicInteger(1);
++    protected static Deque<TimingHandler> MAIN_THREAD_TIMING_STACK = new ArrayDeque<>();
++    protected static Map<Thread, Deque<TimingHandler>> WORLD_THREAD_TIMING_STACK = new ConcurrentHashMap<>();
++    protected static TimingHandler WORLD_PARENT_TIMING = null;
      final int id = idPool.getAndIncrement();
  
      final TimingIdentifier identifier;
-     private final boolean verbose;
- 
+-    private final boolean verbose;
+-
 -    private final Int2ObjectOpenHashMap<TimingData> children = new LoadingIntMap<>(TimingData::new);
-+    private final Map<Integer, TimingData> children = new ConcurrentHashMap<>();
++    protected final boolean verbose;
++    
++    protected final Map<Integer, TimingData> children = new ConcurrentHashMap<>();
  
      final TimingData record;
-     private TimingHandler startParent;
-@@ -124,6 +127,11 @@
+-    private TimingHandler startParent;
+-    private final TimingHandler groupHandler;
+-
+-    private long start = 0;
+-    private int timingDepth = 0;
+-    private boolean added;
+-    private boolean timed;
+-    private boolean enabled;
++    protected TimingHandler startParent;
++    protected final TimingHandler groupHandler;
++    
++    protected long start = 0;
++    protected int timingDepth = 0;
++    protected boolean added;
++    protected boolean timed;
++    protected boolean enabled;
  
-     private void popTimingStack() {
-         TimingHandler last;
-+        if(this instanceof FullServerTickHandler){
-+            TIMING_STACK.clear();
+     TimingHandler(@NotNull TimingIdentifier id) {
+         this.identifier = id;
+@@ -66,7 +73,64 @@
+         TimingIdentifier.getGroup(id.group).handlers.add(this);
+         checkEnabled();
+     }
++    
++    public static class WorldTiming extends TimingHandler{
++    
++        WorldTiming(@NotNull TimingIdentifier id) {
++            super(id);
 +        }
-+        TIMING_STACK.remove(this);
-+        /*
-         while ((last = TIMING_STACK.removeLast()) != this) {
-             last.timingDepth = 0;
-             if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
-@@ -138,7 +146,7 @@
-                 TIMING_STACK.addLast(last);
-                 break;
-             }
--        }
-+        }*/
++    
++    
++        @Override
++        @NotNull
++        public Timing startTiming() {
++            return startTiming(false);
++        }
++        
++        
++        @NotNull
++        public Timing startTiming(boolean parent) {
++            if (!enabled || !Bukkit.isPrimaryThread()) {
++                return this;
++            }
++            
++            if(!WorldThreads.isWorldThread()) return this;
++            
++            Deque<TimingHandler> timingHandlers = WORLD_THREAD_TIMING_STACK.computeIfAbsent(Thread.currentThread(), k -> new ArrayDeque<>());
++            if (++timingDepth == 1) {
++                startParent = timingHandlers.peekLast();
++                if(parent){
++                    startParent = WORLD_PARENT_TIMING;
++                }
++                start = System.nanoTime();
++            }
++            timingHandlers.addLast(this);
++        
++            return this;
++        }
++    
++        @Override
++        public void stopTiming() {
++            if (!enabled || timingDepth <= 0 || start == 0 || !Bukkit.isPrimaryThread()) {
++                return;
++            }
++    
++            if(!WorldThreads.isWorldThread()) return;
++        
++            popTimingStack();
++            if (--timingDepth == 0) {
++                addDiff(System.nanoTime() - start, startParent);
++                startParent = null;
++                start = 0;
++            }
++        }
++    }
+ 
++    
++    
++    
++    
++    
+     final void checkEnabled() {
+         enabled = Timings.timingsEnabled && (!verbose || Timings.verboseEnabled);
+     }
+@@ -101,11 +165,15 @@
+         if (!enabled || !Bukkit.isPrimaryThread()) {
+             return this;
+         }
+-        if (++timingDepth == 1) {
+-            startParent = TIMING_STACK.peekLast();
+-            start = System.nanoTime();
++        
++        if(!WorldThreads.isWorldThread()){
++            if (++timingDepth == 1) {
++                startParent = MAIN_THREAD_TIMING_STACK.peekLast();
++                start = System.nanoTime();
++            }
++            MAIN_THREAD_TIMING_STACK.addLast(this);
+         }
+-        TIMING_STACK.addLast(this);
++        
+         return this;
      }
  
-     @Override
-@@ -148,7 +156,7 @@
+@@ -113,6 +181,8 @@
+         if (!enabled || timingDepth <= 0 || start == 0 || !Bukkit.isPrimaryThread()) {
+             return;
+         }
++    
++        if(WorldThreads.isWorldThread()) return;
+ 
+         popTimingStack();
+         if (--timingDepth == 0) {
+@@ -121,22 +191,51 @@
+             start = 0;
+         }
+     }
++    
++    public static synchronized void initializeWorldTiming(){
++        WORLD_PARENT_TIMING = MAIN_THREAD_TIMING_STACK.peekLast();
++    }
++    
++    public static void clearWorldTimings(){
++        WORLD_THREAD_TIMING_STACK.clear();
++        WORLD_PARENT_TIMING = null;
++    }
+ 
+-    private void popTimingStack() {
++    protected void popTimingStack() {
+         TimingHandler last;
+-        while ((last = TIMING_STACK.removeLast()) != this) {
+-            last.timingDepth = 0;
+-            if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
+-                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Look above this for any errors and report this to Paper unless it has a plugin in the stack trace (" + last.identifier + " did not stopTiming)");
+-            } else {
+-                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to the plugin " + last.identifier.group + " (Look for errors above this in the logs) (" + last.identifier + " did not stopTiming)", new Throwable());
++        
++        if(!WorldThreads.isWorldThread()) {
++            while ((last = MAIN_THREAD_TIMING_STACK.removeLast()) != this) {
++                last.timingDepth = 0;
++                if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
++                    Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Look above this for any errors and report this to Paper unless it has a plugin in the stack trace (" + last.identifier + " did not stopTiming)");
++                } else {
++                    Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to the plugin " + last.identifier.group + " (Look for errors above this in the logs) (" + last.identifier + " did not stopTiming)", new Throwable());
++                }
++        
++                boolean found = MAIN_THREAD_TIMING_STACK.contains(this);
++                if (!found) {
++                    // We aren't even in the stack... Don't pop everything
++                    MAIN_THREAD_TIMING_STACK.addLast(last);
++                    break;
++                }
+             }
+-
+-            boolean found = TIMING_STACK.contains(this);
+-            if (!found) {
+-                // We aren't even in the stack... Don't pop everything
+-                TIMING_STACK.addLast(last);
+-                break;
++        } else {
++            Deque<TimingHandler> timingHandlers = WORLD_THREAD_TIMING_STACK.computeIfAbsent(Thread.currentThread(), k -> new ArrayDeque<>());
++            while ((last = timingHandlers.removeLast()) != this) {
++                last.timingDepth = 0;
++                if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
++                    Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Look above this for any errors and report this to Paper unless it has a plugin in the stack trace (" + last.identifier + " did not stopTiming)");
++                } else {
++                    Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to the plugin " + last.identifier.group + " (Look for errors above this in the logs) (" + last.identifier + " did not stopTiming)", new Throwable());
++                }
++        
++                boolean found = timingHandlers.contains(this);
++                if (!found) {
++                    // We aren't even in the stack... Don't pop everything
++                    timingHandlers.addLast(last);
++                    break;
++                }
+             }
+         }
+     }
+@@ -148,7 +247,7 @@
  
      void addDiff(long diff, @Nullable TimingHandler parent) {
          if (parent != null) {
@@ -57,7 +225,7 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/
          }
  
          record.add(diff);
-@@ -159,7 +167,7 @@
+@@ -159,7 +258,7 @@
          }
          if (groupHandler != null) {
              groupHandler.addDiff(diff, parent);
@@ -66,9 +234,71 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/co/aikar/timings/
          }
      }
  
-diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
---- Original/Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-08-21 18:25:00.820829800 +0900
-+++ Paper-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-05 17:52:23.533047800 +0900
+diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/Timings.java Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/Timings.java
+--- Original/Tuinity-API/src/main/java/co/aikar/timings/Timings.java	2021-09-26 18:20:00.214235300 +0900
++++ Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/Timings.java	2021-09-26 22:35:56.836091100 +0900
+@@ -293,4 +293,30 @@
+     static TimingHandler ofSafe(@Nullable String groupName, @NotNull String name, @Nullable Timing groupHandler) {
+         return TimingsManager.getHandler(groupName, name, groupHandler);
+     }
++    
++    
++    
++    @NotNull
++    public static TimingHandler ofSafeW(@NotNull String name) {
++        return ofSafeW(null, name, null);
++    }
++    
++    @NotNull
++    static Timing ofSafeW(@Nullable Plugin plugin, @NotNull String name) {
++        Timing pluginHandler = null;
++        if (plugin != null) {
++            pluginHandler = ofSafeW(plugin.getName(), "Combined Total", TimingsManager.PLUGIN_GROUP_HANDLER);
++        }
++        return ofSafeW(plugin != null ? plugin.getName() : "Minecraft - Invalid Plugin", name, pluginHandler);
++    }
++    
++    @NotNull
++    static TimingHandler ofSafeW(@NotNull String name, @Nullable Timing groupHandler) {
++        return ofSafeW(null, name, groupHandler);
++    }
++    
++    @NotNull
++    static TimingHandler ofSafeW(@Nullable String groupName, @NotNull String name, @Nullable Timing groupHandler) {
++        return TimingsManager.getHandlerW(groupName, name, groupHandler);
++    }
+ }
+diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java
+--- Original/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-09-26 18:20:00.215233700 +0900
++++ Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-09-26 22:08:44.518047800 +0900
+@@ -41,9 +41,7 @@
+ import org.jetbrains.annotations.Nullable;
+ 
+ public final class TimingsManager {
+-    static final Map<TimingIdentifier, TimingHandler> TIMING_MAP = LoadingMap.of(
+-        new ConcurrentHashMap<>(4096, .5F), TimingHandler::new
+-    );
++    static final Map<TimingIdentifier, TimingHandler> TIMING_MAP = new ConcurrentHashMap<>(4096, .5F);
+     public static final FullServerTickHandler FULL_SERVER_TICK = new FullServerTickHandler();
+     public static final TimingHandler TIMINGS_TICK = Timings.ofSafe("Timings Tick", FULL_SERVER_TICK);
+     public static final Timing PLUGIN_GROUP_HANDLER = Timings.ofSafe("Plugins");
+@@ -132,7 +130,12 @@
+ 
+     @NotNull
+     static TimingHandler getHandler(@Nullable String group, @NotNull String name, @Nullable Timing parent) {
+-        return TIMING_MAP.get(new TimingIdentifier(group, name, parent));
++        return TIMING_MAP.computeIfAbsent(new TimingIdentifier(group, name, parent), TimingHandler::new);
++    }
++    
++    @NotNull
++    static TimingHandler getHandlerW(@Nullable String group, @NotNull String name, @Nullable Timing parent) {
++        return TIMING_MAP.computeIfAbsent(new TimingIdentifier(group, name, parent), TimingHandler.WorldTiming::new);
+     }
+ 
+ 
+diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Chiyogami/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+--- Original/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-26 18:20:00.819388600 +0900
++++ Chiyogami/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-26 22:24:03.219827600 +0900
 @@ -20,6 +20,7 @@
  import java.util.Map;
  import java.util.Set;
@@ -119,7 +349,7 @@ diff --strip-trailing-cr -urN Original/Paper-API/src/main/java/org/bukkit/plugin
 -                            plugin.getDescription().getFullName(),
 -                            ex.getMessage()
 -                            ));
-+        try{
++        try {
 +            EVENT_LOCK.lock();
 +            // Paper - replace callEvent by merging to below method
 +            if (event.isAsynchronous() && server.isPrimaryThread()) {

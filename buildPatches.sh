@@ -1,9 +1,9 @@
-diff --strip-trailing-cr -urN Original/Paper-Server/src Paper-Server/src > server.patch
-diff --strip-trailing-cr -urN Original/Paper-Server/pom.xml Paper-Server/pom.xml > pom.xml.patch
-diff --strip-trailing-cr -urN Original/Paper-API/src Paper-API/src > api.patch
-diff --strip-trailing-cr -urN Original/Paper-MojangAPI/src Paper-MojangAPI/src > mojang.patch
+diff --strip-trailing-cr -urN Original/Tuinity-Server/src Chiyogami/Tuinity-Server/src > server.patch
+diff --strip-trailing-cr -urN Original/Tuinity-Server/pom.xml Chiyogami/Tuinity-Server/pom.xml > server.pom.xml.patch
+diff --strip-trailing-cr -urN Original/Tuinity-API/src Chiyogami/Tuinity-API/src > api.patch
+diff --strip-trailing-cr -urN Original/Tuinity-API/pom.xml Chiyogami/Tuinity-API/pom.xml > api.pom.xml.patch
 mkdir -p patches
 mv -f server.patch patches
-mv -f pom.xml.patch patches
+mv -f server.pom.xml.patch patches
 mv -f api.patch patches
-mv -f mojang.patch patches
+mv -f api.pom.xml.patch patches
