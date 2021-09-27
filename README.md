@@ -1,7 +1,7 @@
 Chiyogami-Server-1.15.2
 ===========
 
-Chiyogami-Serverは [Paper](https://github.com/PaperMC/Paper) をフォークしたものであり、Spigotプラグインを動作させつつマルチスレッド実行を可能とするMinecraftサーバーソフトです。
+Chiyogami-Serverは [Tuinity](https://github.com/Tuinity/Tuinity) をフォークしたものであり、Spigotプラグインを動作させつつマルチスレッド実行を可能とするMinecraftサーバーソフトです。
 
 Other version
 ------
@@ -35,7 +35,7 @@ For developer
 
 Eventには同時に実行されるのを防ぐためロックするように書き換えましたが、ワールドごとに実行スレッドが違うためワールド系のEventの実行順序が入れ替わる可能性があるため注意が必要です。
 
-コードを閲覧したい場合は、ビルドした後に ```Chiyogami/Paper-Server/src/``` をご覧ください。
+コードを閲覧したい場合は、ビルドした後に ```Chiyogami/Tuinity-Server/src/``` をご覧ください。
 コードを変更した場合は上記のソースを変更した後に```./rebuild.sh```を実行することでビルドができます。
 
 API
