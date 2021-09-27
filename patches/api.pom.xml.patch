@@ -1,0 +1,26 @@
+--- Original/Tuinity-API/pom.xml	2021-09-27 23:30:43.989390300 +0900
++++ Chiyogami/Tuinity-API/pom.xml	2021-09-28 00:13:12.670512200 +0900
+@@ -39,6 +39,10 @@
+             <id>sonatype</id>
+             <url>https://oss.sonatype.org/content/groups/public/</url>
+         </repository>
++        <repository>
++            <id>jitpack.io</id>
++            <url>https://jitpack.io</url>
++        </repository>
+     </repositories>
+ 
+     <pluginRepositories>
+@@ -146,6 +150,12 @@
+             <artifactId>asm-commons</artifactId>
+             <version>8.0.1</version>
+         </dependency>
++        <dependency>
++            <groupId>com.github.Be4rJP</groupId>
++            <artifactId>ChiyogamiLib</artifactId>
++            <version>ae2e59f252</version>
++            <scope>compile</scope>
++        </dependency>
+     </dependencies>
+ 
+     <build>
