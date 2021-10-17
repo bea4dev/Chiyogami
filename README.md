@@ -2,6 +2,10 @@
 
 Chiyogami-Serverは [Tuinity](https://github.com/Tuinity/Tuinity) をフォークしたものであり、Spigotプラグインを動作させつつマルチスレッド実行を可能とするMinecraftサーバーソフトです。
 
+Download
+------
+https://github.com/Be4rJP/Chiyogami/releases/
+
 Other version
 ------
 * [1.16.5](https://github.com/Be4rJP/Chiyogami/tree/ver/1.16.5)
@@ -12,6 +16,14 @@ Notes
 - [x] このサーバーは開発段階であるため十分なテストがされていません
 - [x] このサーバーを実行する前には必ずワールドデータ等のバックアップをしてください
 - [x] issue等のフィードバックをお待ちしています。
+
+API
+------
+このサーバーの機能を最大限生かす為のAPIが用意されています
+
+以下から利用できます
+
+https://github.com/Be4rJP/ChiyogamiLib
 
 How to build
 ------
@@ -36,11 +48,3 @@ Eventには同時に実行されるのを防ぐためロックするように書
 
 コードを閲覧したい場合は、ビルドした後に ```Chiyogami/Tuinity-Server/src/``` をご覧ください。
 コードを変更した場合は上記のソースを変更した後に```./rebuild.sh```を実行することでビルドができます。
-
-API
-------
-このサーバーの機能を最大限生かす為のAPIが用意されています
-
-以下から利用できます
-
-https://github.com/Be4rJP/ChiyogamiLib
