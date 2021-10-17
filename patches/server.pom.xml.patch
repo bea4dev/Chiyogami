@@ -1,5 +1,39 @@
 --- Original/Tuinity-Server/pom.xml	2021-09-27 23:30:54.672064100 +0900
-+++ Chiyogami/Tuinity-Server/pom.xml	2021-09-28 00:12:24.879118300 +0900
++++ Chiyogami/Chiyogami-Server/pom.xml	2021-10-17 17:24:53.064375400 +0900
+@@ -1,10 +1,10 @@
+  <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+     <modelVersion>4.0.0</modelVersion>
+-    <artifactId>tuinity</artifactId>
++    <artifactId>chiyogami</artifactId>
+     <packaging>jar</packaging>
+     <version>1.15.2-R0.1-SNAPSHOT</version>
+-    <name>Tuinity-Server</name>
++    <name>Chiyogami-Server</name>
+     <url>https://github.com/Spottedleaf/Tuinity</url>
+     <properties>
+         <!-- <skipTests>true</skipTests> Paper - This [was] not going to end well -->
+@@ -17,16 +17,16 @@
+     </properties>
+ 
+     <parent>
+-        <groupId>com.tuinity</groupId>
+-        <artifactId>tuinity-parent</artifactId>
++        <groupId>world.chiyogami</groupId>
++        <artifactId>chiyogami-parent</artifactId>
+         <version>dev-SNAPSHOT</version>
+         <relativePath>../pom.xml</relativePath>
+     </parent>
+ 
+     <dependencies>
+         <dependency>
+-            <groupId>com.tuinity</groupId>
+-            <artifactId>tuinity-api</artifactId>
++            <groupId>world.chiyogami</groupId>
++            <artifactId>chiyogami-api</artifactId>
+             <version>${project.version}</version>
+             <scope>compile</scope>
+         </dependency>
 @@ -139,6 +139,12 @@
              <version>4.8.47</version>
              <scope>test</scope>
@@ -7,7 +41,7 @@
 +        <dependency>
 +            <groupId>com.github.Be4rJP</groupId>
 +            <artifactId>ChiyogamiLib</artifactId>
-+            <version>ae2e59f252</version>
++            <version>71d7778b4c</version>
 +            <scope>compile</scope>
 +        </dependency>
      </dependencies>

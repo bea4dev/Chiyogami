@@ -24,20 +24,25 @@ echo
 mkdir -p Chiyogami
 cp -rf Original/* Chiyogami/
 
+mv -f Chiyogami/Tuinity-Server/ Chiyogami/Chiyogami-Server/
+mv -f Chiyogami/Tuinity-API/ Chiyogami/Chiyogami-API/
+
 echo 
 echo Applying patch...
 echo 
-cp -f patches/server.patch Chiyogami/Tuinity-Server/
-cp -f patches/server.pom.xml.patch Chiyogami/Tuinity-Server/
-cp -f patches/api.patch Chiyogami/Tuinity-API/
-cp -f patches/api.pom.xml.patch Chiyogami/Tuinity-API/
+cp -f patches/server.patch Chiyogami/Chiyogami-Server/
+cp -f patches/server.pom.xml.patch Chiyogami/Chiyogami-Server/
+cp -f patches/api.patch Chiyogami/Chiyogami-API/
+cp -f patches/api.pom.xml.patch Chiyogami/Chiyogami-API/
+cp -f patches/pom.xml.patch Chiyogami/
 
 cd Chiyogami/
 
-patch -Np1 < Tuinity-Server/server.patch
-patch -Np1 < Tuinity-Server/server.pom.xml.patch
-patch -Np1 < Tuinity-API/api.patch
-patch -Np1 < Tuinity-API/api.pom.xml.patch
+patch -Np1 < Chiyogami-Server/server.patch
+patch -Np1 < Chiyogami-Server/server.pom.xml.patch
+patch -Np1 < Chiyogami-API/api.patch
+patch -Np1 < Chiyogami-API/api.pom.xml.patch
+patch -Np1 < pom.xml.patch
 
 cd ../
 
