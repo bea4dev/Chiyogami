@@ -1,6 +1,6 @@
 diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingHandler.java
 --- Original/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-27 23:30:43.058124800 +0900
-+++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-26 21:55:47.321367800 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-10-18 04:04:36.452057400 +0900
 @@ -28,34 +28,41 @@
  
  import java.util.ArrayDeque;
@@ -236,7 +236,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timing
  
 diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/Timings.java Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/Timings.java
 --- Original/Tuinity-API/src/main/java/co/aikar/timings/Timings.java	2021-09-27 23:30:43.060123500 +0900
-+++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/Timings.java	2021-09-28 00:57:24.572035900 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/Timings.java	2021-10-18 04:04:36.453057700 +0900
 @@ -293,4 +293,30 @@
      static TimingHandler ofSafe(@Nullable String groupName, @NotNull String name, @Nullable Timing groupHandler) {
          return TimingsManager.getHandler(groupName, name, groupHandler);
@@ -270,7 +270,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timing
  }
 diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingsManager.java
 --- Original/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-09-27 23:30:43.061123000 +0900
-+++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-09-28 00:58:16.752057700 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-10-18 04:04:36.454055200 +0900
 @@ -41,9 +41,7 @@
  import org.jetbrains.annotations.Nullable;
  
@@ -298,7 +298,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timing
  
 diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Chiyogami/Chiyogami-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 --- Original/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-27 23:30:43.565632600 +0900
-+++ Chiyogami/Chiyogami-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-10-17 23:00:05.609269100 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-10-18 04:04:36.455054200 +0900
 @@ -20,6 +20,7 @@
  import java.util.Map;
  import java.util.Set;
