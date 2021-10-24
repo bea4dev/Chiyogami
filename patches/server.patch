@@ -1,6 +1,6 @@
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java Chiyogami/Chiyogami-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 --- Original/Tuinity-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java	2021-09-27 23:30:53.589081500 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java	2021-10-18 04:04:43.101064900 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java	2021-10-23 05:54:50.527947700 +0900
 @@ -1,8 +1,12 @@
  package co.aikar.timings;
  
@@ -166,7 +166,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/co/aikar/tim
  }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java Chiyogami/Chiyogami-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java
 --- Original/Tuinity-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java	2021-09-27 23:30:55.905497100 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java	2021-10-18 04:04:43.102064100 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java	2021-10-23 05:54:50.528946300 +0900
 @@ -3,51 +3,174 @@
  import net.minecraft.server.AxisAlignedBB;
  import net.minecraft.server.Entity;
@@ -372,7 +372,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/com/tuinity/
  }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/Chunk.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/Chunk.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/Chunk.java	2021-09-27 23:30:56.485164600 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/Chunk.java	2021-10-18 04:04:43.103063900 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/Chunk.java	2021-10-23 05:54:50.529946800 +0900
 @@ -14,6 +14,7 @@
  import java.util.Map;
  import java.util.Set;
@@ -392,28 +392,39 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          this.d = biomestorage;
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/ChunkMapDistance.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/ChunkMapDistance.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/ChunkMapDistance.java	2021-09-27 23:30:55.165313600 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/ChunkMapDistance.java	2021-10-23 04:52:04.772657100 +0900
-@@ -17,9 +17,14 @@
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/ChunkMapDistance.java	2021-10-25 00:15:02.421405100 +0900
+@@ -17,9 +17,16 @@
  import it.unimi.dsi.fastutil.objects.ObjectIterator;
  import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  import it.unimi.dsi.fastutil.objects.ObjectSet;
 +
++import java.util.ArrayDeque;
 +import java.util.Iterator;
 +import java.util.Map;
  import java.util.Set;
  import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentLinkedDeque;
  import java.util.concurrent.Executor;
 +import java.util.concurrent.locks.ReentrantLock;
  import javax.annotation.Nullable;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
-@@ -52,23 +57,30 @@
+@@ -35,7 +42,7 @@
+     public static final int MOB_SPAWN_RANGE = 8; //private final ChunkMapDistance.b f = new ChunkMapDistance.b(8); // Paper - no longer used
+     private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
+     // Paper start use a queue, but still keep unique requirement
+-    public final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.ArrayDeque<PlayerChunk>() {
++    public final java.util.Queue<PlayerChunk> pendingChunkUpdates = new ArrayDeque<PlayerChunk>() {
+         @Override
+         public boolean add(PlayerChunk o) {
+             if (o.isUpdateQueued) return true;
+@@ -52,23 +59,30 @@
      private long currentTick;
  
      PlayerChunkMap chunkMap; // Paper
 +    
-+    private final ReentrantLock LOCK = new ReentrantLock(true);
++    //private final ReentrantLock LOCK = new ReentrantLock(true);
  
      // Tuinity start - delay chunk unloads
      private long nextUnloadId; // delay chunk unloads
@@ -432,7 +443,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
 -        if (changed) {
 -            this.getTicketTracker().update(chunk, getLowestTicketLevel(tickets), false);
 +        try {
-+            LOCK.lock();
++            //LOCK.lock();
 +            ArraySetSorted<Ticket<?>> tickets = this.tickets.get(chunk);
 +            if (tickets == null) {
 +                return;
@@ -447,11 +458,11 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
 +                this.getTicketTracker().update(chunk, getLowestTicketLevel(tickets), false);
 +            }
 +        } finally {
-+            LOCK.unlock();
++            //LOCK.unlock();
          }
      }
  
-@@ -79,18 +91,23 @@
+@@ -79,18 +93,23 @@
      };
  
      private void computeDelayedTicketFor(long chunk, int removedLevel, ArraySetSorted<Ticket<?>> tickets) {
@@ -468,7 +479,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
 -        ticket.setTicketLevel(removedLevel);
 -        tickets.add(ticket); // re-add with new expire time and ticket level
 +        try {
-+            LOCK.lock();
++            //LOCK.lock();
 +            int lowestLevel = getLowestTicketLevel(tickets);
 +            if (removedLevel > lowestLevel) {
 +                return;
@@ -482,12 +493,12 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
 +            ticket.setTicketLevel(removedLevel);
 +            tickets.add(ticket); // re-add with new expire time and ticket level
 +        } finally {
-+            LOCK.unlock();
++            //LOCK.unlock();
 +        }
      }
      // Tuinity end - delay chunk unloads
  
-@@ -106,42 +123,46 @@
+@@ -106,42 +125,46 @@
      }
  
      protected void purgeTickets() {
@@ -504,7 +515,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
 -                boolean ret = ticket.isExpired(this.currentTick);
 -                if (com.tuinity.tuinity.config.TuinityConfig.delayChunkUnloadsBy <= 0) {
 +        try {
-+            LOCK.lock();
++            //LOCK.lock();
 +            com.tuinity.tuinity.util.TickThread.softEnsureTickThread("Async purge tickets"); // Tuinity
 +            ++this.currentTick;
 +            ObjectIterator objectiterator = this.tickets.entrySet().iterator();
@@ -559,13 +570,40 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
 -                objectiterator.remove();
              }
 +        } finally {
-+            LOCK.unlock();
++            //LOCK.unlock();
          }
 -
      }
  
      private static int getLowestTicketLevel(ArraySetSorted<Ticket<?>> arraysetsorted) { return a(arraysetsorted); } // Tuinity - OBFHELPER
-@@ -435,7 +456,7 @@
+@@ -158,6 +181,8 @@
+     @Nullable
+     protected abstract PlayerChunk a(long i, int j, @Nullable PlayerChunk playerchunk, int k);
+ 
++    public final ReentrantLock CHUNK_UPDATE_LOCK = new ReentrantLock(true);
++    
+     public boolean a(PlayerChunkMap playerchunkmap) {
+         com.tuinity.tuinity.util.TickThread.softEnsureTickThread("Cannot tick ChunkMapDistance off of the main-thread");// Tuinity
+         //this.f.a(); // Paper - no longer used
+@@ -171,6 +196,7 @@
+         }
+ 
+         // Paper start
++        CHUNK_UPDATE_LOCK.lock(); try{
+         if (!this.pendingChunkUpdates.isEmpty()) {
+             this.pollingPendingChunkUpdates = true; try {
+             while(!this.pendingChunkUpdates.isEmpty()) {
+@@ -213,6 +239,9 @@
+ 
+             return flag;
+         }
++        } finally {
++            CHUNK_UPDATE_LOCK.unlock();
++        }
+     }
+     boolean pollingPendingChunkUpdates = false; // Paper
+ 
+@@ -435,7 +464,7 @@
      public void a(SectionPosition sectionposition, EntityPlayer entityplayer) {
          com.tuinity.tuinity.util.TickThread.softEnsureTickThread("Async player add"); // Tuinity
          long i = sectionposition.u().pair();
@@ -574,7 +612,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(entityplayer);
-@@ -446,7 +467,7 @@
+@@ -446,7 +475,7 @@
      public void b(SectionPosition sectionposition, EntityPlayer entityplayer) {
          com.tuinity.tuinity.util.TickThread.softEnsureTickThread("Async player remove"); // Tuinity
          long i = sectionposition.u().pair();
@@ -583,7 +621,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
  
          if (objectset != null) objectset.remove(entityplayer); // Paper - some state corruption happens here, don't crash, clean up gracefully.
          if (objectset == null || objectset.isEmpty()) { // Paper
-@@ -496,13 +517,13 @@
+@@ -496,13 +525,13 @@
      public <T> void removeAllTicketsFor(TicketType<T> ticketType, int ticketLevel, T ticketIdentifier) {
          com.tuinity.tuinity.util.TickThread.softEnsureTickThread("Async ticket remove"); // Tuinity
          Ticket<T> target = new Ticket<>(ticketType, ticketLevel, ticketIdentifier);
@@ -599,7 +637,36 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
  
                  // can't use entry after it's removed
                  if (tickets.isEmpty()) {
-@@ -813,7 +834,7 @@
+@@ -541,15 +570,20 @@
+ 
+         @Override
+         protected void a(long i, int j) {
+-            PlayerChunk playerchunk = ChunkMapDistance.this.b(i);
+-            int k = playerchunk == null ? PlayerChunkMap.GOLDEN_TICKET + 1 : playerchunk.getTicketLevel();
+-
+-            if (k != j) {
+-                playerchunk = ChunkMapDistance.this.a(i, j, playerchunk, k);
+-                if (playerchunk != null) {
+-                    ChunkMapDistance.this.pendingChunkUpdates.add(playerchunk);
++            ChunkMapDistance.this.CHUNK_UPDATE_LOCK.lock();
++            try{
++                PlayerChunk playerchunk = ChunkMapDistance.this.b(i);
++                int k = playerchunk == null ? PlayerChunkMap.GOLDEN_TICKET + 1 : playerchunk.getTicketLevel();
++        
++                if (k != j) {
++                    playerchunk = ChunkMapDistance.this.a(i, j, playerchunk, k);
++                    if (playerchunk != null) {
++                        ChunkMapDistance.this.pendingChunkUpdates.add(playerchunk);
++                    }
++        
+                 }
+-
++            } finally {
++                ChunkMapDistance.this.CHUNK_UPDATE_LOCK.unlock();
+             }
+         }
+ 
+@@ -813,7 +847,7 @@
          }
  
          private boolean d(long i) {
@@ -610,7 +677,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/ChunkProviderServer.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/ChunkProviderServer.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/ChunkProviderServer.java	2021-09-27 23:30:56.603097400 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/ChunkProviderServer.java	2021-10-18 04:04:43.105062600 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/ChunkProviderServer.java	2021-10-23 05:54:50.531944500 +0900
 @@ -18,6 +18,7 @@
  import com.destroystokyo.paper.exception.ServerInternalException;
  import org.apache.logging.log4j.LogManager;
@@ -702,7 +769,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              return this.getChunkAtIfLoadedMainThread(i, j); // Paper - optimise for loaded chunks
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/DedicatedServer.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/DedicatedServer.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/DedicatedServer.java	2021-09-27 23:30:54.890470400 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/DedicatedServer.java	2021-10-18 04:04:43.106062100 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/DedicatedServer.java	2021-10-23 05:54:50.532944900 +0900
 @@ -195,6 +195,7 @@
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
          // Paper end
@@ -713,7 +780,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          this.setSpawnNPCs(dedicatedserverproperties.spawnNpcs);
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/Entity.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/Entity.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/Entity.java	2021-09-27 23:30:55.918490200 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/Entity.java	2021-10-23 03:53:47.327501200 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/Entity.java	2021-10-25 01:07:18.973256200 +0900
 @@ -48,6 +48,7 @@
  import org.bukkit.event.entity.EntityPoseChangeEvent;
  import org.bukkit.event.player.PlayerTeleportEvent;
@@ -740,20 +807,81 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          }
      }
      // Tuinity end - optimise entity movement
-@@ -2854,7 +2855,9 @@
+@@ -2843,18 +2844,26 @@
+             LOGGER.warn("Illegal Entity Teleport " + this + " to " + dimensionmanager + ":" + location, new Throwable());
+             return null;
+         }
++        MinecraftServer minecraftserver = this.getMinecraftServer();
++        WorldServer worldserver1 = minecraftserver.getWorldServer(dimensionmanager);
++        if(!this.world.isClientSide) { // Chiyogami - Thread wait request
++            if(worldserver1 != null) {
++                if (worldserver1 != this.world) {
++                    WorldThreadPool.requestWaitForTask((WorldServer) this.world, worldserver1);
++                }
++            }
++        }
+         // Paper end
+         if (!this.world.isClientSide && !this.dead) {
+             this.world.getMethodProfiler().enter("changeDimension");
+-            MinecraftServer minecraftserver = this.getMinecraftServer();
++            //MinecraftServer minecraftserver = this.getMinecraftServer();
+             DimensionManager dimensionmanager1 = this.dimension;
+             WorldServer worldserver = minecraftserver.getWorldServer(dimensionmanager1);
+-            WorldServer worldserver1 = minecraftserver.getWorldServer(dimensionmanager);
++            //WorldServer worldserver1 = minecraftserver.getWorldServer(dimensionmanager);
+             // CraftBukkit start
              if (worldserver1 == null){
                  return null;
              }
 -
-+            if(worldserver1 != this.world){ // Chiyogami
-+                WorldThreadPool.requestWaitForTask((WorldServer) this.world, worldserver1);
-+            }
              // this.dimension = dimensionmanager;
              // this.decouple();
              // CraftBukkit end
+@@ -2878,6 +2887,13 @@
+                 worldserver1 = ((CraftWorld) event.getTo().getWorld()).getHandle();
+                 blockposition = new BlockPosition(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ());
+                 // CraftBukkit end
++                if(!this.world.isClientSide) { // Chiyogami - Thread wait request
++                    if(worldserver1 != null) {
++                        if (worldserver1 != this.world) {
++                            WorldThreadPool.requestWaitForTask((WorldServer) this.world, worldserver1);
++                        }
++                    }
++                }
+             } else if (dimensionmanager.getType() == DimensionManager.THE_END) { // CraftBukkit
+                 // CraftBukkit start
+                 EntityPortalEvent event = CraftEventFactory.callEntityPortalEvent(this, worldserver1, worldserver1.getDimensionSpawn() != null ? worldserver1.getDimensionSpawn() : worldserver1.getSpawn(), 0);
+@@ -2887,6 +2903,13 @@
+                 worldserver1 = ((CraftWorld) event.getTo().getWorld()).getHandle();
+                 blockposition = new BlockPosition(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ());
+                 // CraftBukkit end
++                if(!this.world.isClientSide) { // Chiyogami - Thread wait request
++                    if(worldserver1 != null) {
++                        if (worldserver1 != this.world) {
++                            WorldThreadPool.requestWaitForTask((WorldServer) this.world, worldserver1);
++                        }
++                    }
++                }
+             } else {
+                 double d0 = this.locX();
+                 double d1 = this.locZ();
+@@ -2921,6 +2944,13 @@
+                 blockposition = new BlockPosition(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ());
+                 int searchRadius = event.getSearchRadius();
+                 // CraftBukkit end
++                if(!this.world.isClientSide) { // Chiyogami - Thread wait request
++                    if(worldserver1 != null) {
++                        if (worldserver1 != this.world) {
++                            WorldThreadPool.requestWaitForTask((WorldServer) this.world, worldserver1);
++                        }
++                    }
++                }
+                 ShapeDetector.Shape shapedetector_shape = worldserver1.getTravelAgent().findPortal(blockposition, vec3d, this.getPortalDirection(), vec3d1.x, vec3d1.y, this instanceof EntityHuman, searchRadius); // CraftBukkit - search radius
+ 
+                 if (shapedetector_shape == null) {
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/EntityLiving.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/EntityLiving.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/EntityLiving.java	2021-09-27 23:30:56.008437600 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/EntityLiving.java	2021-10-18 04:04:43.109060400 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/EntityLiving.java	2021-10-23 05:54:50.535942200 +0900
 @@ -2683,7 +2683,7 @@
          }
          // Paper - end don't run getEntities if we're not going to use its result
@@ -772,9 +900,33 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          } // Tuinity end - reduce memory allocation from collideNearby
  
      }
+diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/EntityPlayer.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/EntityPlayer.java
+--- Original/Tuinity-Server/src/main/java/net/minecraft/server/EntityPlayer.java	2021-09-27 23:30:53.797565000 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/EntityPlayer.java	2021-10-24 21:41:27.018120600 +0900
+@@ -36,6 +36,7 @@
+ import org.bukkit.event.player.PlayerTeleportEvent;
+ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+ import org.bukkit.inventory.MainHand;
++import world.chiyogami.thread.WorldThreadPool;
+ // CraftBukkit end
+ 
+ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -808,6 +809,12 @@
+ 
+     @Nullable
+     public Entity a(DimensionManager dimensionmanager, PlayerTeleportEvent.TeleportCause cause) {
++        WorldServer to = dimensionmanager.world;
++        if(to != null){
++            if(to != this.world && !this.world.isClientSide){
++                WorldThreadPool.requestWaitForTask((WorldServer) this.world, to);
++            }
++        }
+         // CraftBukkit end
+         if (this.isSleeping()) return this; // CraftBukkit - SPIGOT-3154
+         // this.worldChangeInvuln = true; // CraftBukkit - Moved down and into PlayerList#changeDimension
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/IAsyncTaskHandler.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/IAsyncTaskHandler.java	2021-09-27 23:30:53.830545900 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/IAsyncTaskHandler.java	2021-10-18 04:04:43.110059600 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/IAsyncTaskHandler.java	2021-10-23 05:54:50.537941000 +0900
 @@ -8,6 +8,7 @@
  import java.util.function.BooleanSupplier;
  import org.apache.logging.log4j.LogManager;
@@ -794,7 +946,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
      protected abstract Thread getThread();
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/MCUtil.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MCUtil.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-09-27 23:30:56.488164200 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-10-18 04:04:43.111059100 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-10-23 05:54:50.538941500 +0900
 @@ -317,7 +317,7 @@
       * @return
       */
@@ -815,7 +967,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/MinecraftServer.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MinecraftServer.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-27 23:30:55.925485100 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-10-23 05:33:27.635830300 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-10-23 05:54:50.595910400 +0900
 @@ -1,5 +1,6 @@
  package net.minecraft.server;
  
@@ -995,7 +1147,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
      public CrashReport b(CrashReport crashreport) {
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java	2021-09-27 23:30:56.430196500 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java	2021-10-23 04:48:23.476580500 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/PlayerChunkMap.java	2021-10-25 00:15:02.413409500 +0900
 @@ -32,11 +32,8 @@
  import java.util.Optional;
  import java.util.Queue;
@@ -1009,7 +1161,31 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
  import java.util.concurrent.atomic.AtomicInteger;
  import java.util.function.BooleanSupplier;
  import java.util.function.Consumer;
-@@ -629,7 +626,7 @@
+@@ -439,12 +436,17 @@
+     // Paper start - Chunk Prioritization
+     public void queueHolderUpdate(PlayerChunk playerchunk) {
+         Runnable runnable = () -> {
+-            if (isUnloading(playerchunk)) {
+-                return; // unloaded
+-            }
+-            chunkDistanceManager.pendingChunkUpdates.add(playerchunk);
+-            if (!chunkDistanceManager.pollingPendingChunkUpdates) {
+-                world.getChunkProvider().tickDistanceManager();
++            chunkDistanceManager.CHUNK_UPDATE_LOCK.lock();
++            try {
++                if (isUnloading(playerchunk)) {
++                    return; // unloaded
++                }
++                chunkDistanceManager.pendingChunkUpdates.add(playerchunk);
++                if (!chunkDistanceManager.pollingPendingChunkUpdates) {
++                    world.getChunkProvider().tickDistanceManager();
++                }
++            } finally {
++                chunkDistanceManager.CHUNK_UPDATE_LOCK.unlock();
+             }
+         };
+         if (MCUtil.isMainThread()) {
+@@ -629,7 +631,7 @@
          }
      }
      public Long2ObjectLinkedOpenHashMap<PlayerChunk> getVisibleChunks() {
@@ -1018,7 +1194,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              return this.visibleChunks;
          } else {
              synchronized (this.visibleChunks) {
-@@ -646,7 +643,7 @@
+@@ -646,7 +648,7 @@
      @Nullable
      public PlayerChunk getVisibleChunk(long i) { // Paper - protected -> public
          // Paper start - mt safe get
@@ -1029,7 +1205,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/World.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/World.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/World.java	2021-09-27 23:30:56.517146600 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/World.java	2021-10-18 04:04:43.115056700 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/World.java	2021-10-25 00:06:15.084753500 +0900
 @@ -32,6 +32,7 @@
  import org.bukkit.craftbukkit.block.CraftBlockState;
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
@@ -1047,7 +1223,21 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              Chunk ifLoaded = ((WorldServer) this).getChunkProvider().getChunkAtIfLoadedMainThread(i, j);
              if (ifLoaded != null) {
                  return ifLoaded;
-@@ -1075,7 +1076,7 @@
+@@ -279,6 +280,13 @@
+         // Paper end
+         return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
+     }
++    
++    public Chunk getChunkAtWorldThread(int x, int z, boolean gen){
++        AsyncCatcher.catchOp("get chunk at off world thread");
++    
++        this.getWorld().loadChunk(x, z, gen);
++        return ((ChunkProviderServer) this.chunkProvider).getChunkAtIfLoadedMainThread(x, z);
++    }
+ 
+     // Paper start - if loaded
+     @Nullable
+@@ -1075,7 +1083,7 @@
          // CraftBukkit end
          if (isOutsideWorld(blockposition)) {
              return null;
@@ -1058,7 +1248,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              // CraftBukkit start
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/WorldServer.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/WorldServer.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/WorldServer.java	2021-09-27 23:30:56.563120200 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/WorldServer.java	2021-10-23 04:44:53.929189200 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/WorldServer.java	2021-10-25 00:10:22.355541400 +0900
 @@ -1,5 +1,6 @@
  package net.minecraft.server;
  
@@ -1085,15 +1275,16 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
  import java.util.concurrent.Executor;
  import java.util.function.BooleanSupplier;
  import java.util.function.Predicate;
-@@ -49,6 +44,7 @@
+@@ -49,6 +44,8 @@
  import org.bukkit.event.server.MapInitializeEvent;
  import org.bukkit.event.weather.LightningStrikeEvent;
  import org.bukkit.event.world.TimeSkipEvent;
 +import org.spigotmc.AsyncCatcher;
++import world.chiyogami.chiyogamilib.WorldThreads;
  // CraftBukkit end
  
  public class WorldServer extends World {
-@@ -58,7 +54,7 @@
+@@ -58,7 +55,7 @@
      public final Int2ObjectMap<Entity> entitiesById = new Int2ObjectLinkedOpenHashMap(); final com.tuinity.tuinity.util.maplist.IteratorSafeOrderedReferenceSet<Entity> entitiesForIteration = new com.tuinity.tuinity.util.maplist.IteratorSafeOrderedReferenceSet<>(2048, 0.5f, 2048, 0.2); // Tuinity - make removing entities while ticking safe
      private final Map<UUID, Entity> entitiesByUUID = Maps.newHashMap();
      private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
@@ -1102,7 +1293,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
      boolean tickingEntities;
      // Paper start
      List<java.lang.Runnable> afterEntityTickingTasks = Lists.newArrayList();
-@@ -222,7 +218,7 @@
+@@ -222,7 +219,7 @@
  
      public final void loadChunksForMoveAsync(AxisAlignedBB axisalignedbb, double toX, double toZ,
                                               java.util.function.Consumer<List<IChunkAccess>> onLoad) {
@@ -1111,7 +1302,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              this.getChunkProvider().serverThreadQueue.execute(() -> {
                  this.loadChunksForMoveAsync(axisalignedbb, toX, toZ, onLoad);
              });
-@@ -629,7 +625,7 @@
+@@ -629,7 +626,7 @@
              return;
          }
          AxisAlignedBB axisalignedbb1 = axisalignedbb.grow(1.0E-7D, 1.0E-7D, 1.0E-7D);
@@ -1120,7 +1311,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          try {
              if (entity != null && entity.hardCollides()) {
                  this.getEntities(entity, axisalignedbb, IEntitySelector.notSpectator(), entities);
-@@ -661,7 +657,7 @@
+@@ -661,7 +658,7 @@
                  }
              }
          } finally {
@@ -1129,7 +1320,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          }
      }
  
-@@ -690,7 +686,7 @@
+@@ -690,7 +687,7 @@
      @Override
      protected TileEntity getTileEntity(BlockPosition pos, boolean validate) {
          TileEntity result = super.getTileEntity(pos, validate);
@@ -1138,7 +1329,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              // SPIGOT-5378: avoid deadlock, this can be called in loading logic (i.e lighting) but getType() will block on chunk load
              return result;
          }
-@@ -1248,7 +1244,7 @@
+@@ -1248,7 +1245,7 @@
              // Spigot end
  
              TimingHistory.activatedEntityTicks++; // Paper - timings
@@ -1147,7 +1338,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              try { // Paper - timings
              entity.f(entity.locX(), entity.locY(), entity.locZ());
              entity.lastYaw = entity.yaw;
-@@ -1277,7 +1273,7 @@
+@@ -1277,7 +1274,7 @@
                  }
              }
              } finally { // Paper - timings
@@ -1156,7 +1347,20 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              } // Paper - timings
  
          }
-@@ -1795,6 +1791,7 @@
+@@ -1340,7 +1337,11 @@
+             if (!entity.valid && !entity.cc() && !this.isChunkLoaded(i, k)) { // Paper - always load chunks to register valid entities location
+                 entity.inChunk = false;
+             } else {
+-                this.getChunkAt(i, k).a(entity);
++                if(WorldThreads.isWorldThread()){
++                    this.getChunkAtWorldThread(i, k, true).a(entity);
++                }else{
++                    this.getChunkAt(i, k).a(entity);
++                }
+             }
+         }
+ 
+@@ -1795,6 +1796,7 @@
          java.util.List<Entity> toMoveChunks = new java.util.ArrayList<>(); // Paper
          for (int j = 0; j < i; ++j) {
              List<Entity> entityslice = aentityslice[j]; // Spigot
@@ -1164,7 +1368,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              Iterator iterator = entityslice.iterator();
  
              while (iterator.hasNext()) {
-@@ -1815,9 +1812,10 @@
+@@ -1815,9 +1817,10 @@
                      this.entitiesById.remove(entity.getId());
                      this.unregisterEntity(entity);
  
@@ -1178,7 +1382,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          for (Entity entity : toMoveChunks) {
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 --- Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-09-27 23:30:55.011401300 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-10-18 04:04:43.118055000 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-10-23 05:54:50.545936500 +0900
 @@ -200,12 +200,13 @@
  import org.yaml.snakeyaml.error.MarkedYAMLException;
  
@@ -1205,7 +1409,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/c
  
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 --- Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-09-27 23:30:56.387222000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-10-23 04:54:50.589623500 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-10-23 05:54:50.600908500 +0900
 @@ -265,6 +265,7 @@
  import org.bukkit.util.Consumer;
  import org.bukkit.util.RayTraceResult;
@@ -1232,9 +1436,33 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/c
          for (Long2ObjectMap.Entry<ArraySetSorted<Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
              long chunkKey = chunkTickets.getLongKey();
              ArraySetSorted<Ticket<?>> tickets = chunkTickets.getValue();
+diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+--- Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java	2021-09-27 23:30:54.175348800 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java	2021-10-24 21:41:27.041106800 +0900
+@@ -124,6 +124,7 @@
+ import org.bukkit.scoreboard.Scoreboard;
+ 
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
++import world.chiyogami.thread.WorldThreadPool;
+ 
+ @DelegateDeserialization(CraftOfflinePlayer.class)
+ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -794,6 +795,12 @@
+         // Grab the To and From World Handles.
+         WorldServer fromWorld = ((CraftWorld) from.getWorld()).getHandle();
+         WorldServer toWorld = ((CraftWorld) to.getWorld()).getHandle();
++        
++        if(toWorld != null){
++            if(toWorld != fromWorld && !toWorld.isClientSide){
++                WorldThreadPool.requestWaitForTask(fromWorld, toWorld);
++            }
++        }
+ 
+         // Close any foreign inventory
+         if (getHandle().activeContainer != getHandle().defaultContainer) {
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/spigotmc/AsyncCatcher.java Chiyogami/Chiyogami-Server/src/main/java/org/spigotmc/AsyncCatcher.java
 --- Original/Tuinity-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-09-27 23:30:55.096352700 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-10-18 04:04:43.121053200 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-10-23 05:54:50.547935400 +0900
 @@ -15,4 +15,8 @@
              throw new IllegalStateException( "Asynchronous " + reason + "!" );
          }
@@ -1246,24 +1474,29 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/spigotmc
  }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyogami/ChiyogamiConfig.java Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/ChiyogamiConfig.java
 --- Original/Tuinity-Server/src/main/java/world/chiyogami/ChiyogamiConfig.java	1970-01-01 09:00:00.000000000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/ChiyogamiConfig.java	2021-10-23 03:53:47.334497400 +0900
-@@ -0,0 +1,42 @@
++++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/ChiyogamiConfig.java	2021-10-25 02:04:20.535496400 +0900
+@@ -0,0 +1,55 @@
 +package world.chiyogami;
 +
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import world.chiyogami.chiyogamilib.monitor.WorkMode;
++import world.chiyogami.log.ChiyogamiLogger;
 +import world.chiyogami.thread.WorldThreadPool;
 +
 +import java.io.File;
 +
 +public final class ChiyogamiConfig {
 +    
-+    private static final String MAX_THREADS = "world-threads";
++    private static final String MAX_THREADS = "max-world-threads";
++    
++    private static final String CHIYOGAMI_LOG = "show-detail-log";
 +    
 +    
 +    private static YamlConfiguration yml;
 +    
 +    private static int maxThreads = 0;
++    
++    private static boolean showLogs = true;
 +    
 +    
 +    public static void load(){
@@ -1276,6 +1509,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +            } else {
 +                yml = new YamlConfiguration();
 +                yml.set(MAX_THREADS, 0);
++                yml.set(CHIYOGAMI_LOG, true);
 +                yml.save(file);
 +            }
 +            
@@ -1285,23 +1519,47 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +                WorkMode.MULTI_THREAD_TICK = maxThreads != 1;
 +            }
 +            
++            if(yml.contains(CHIYOGAMI_LOG)){
++                showLogs = yml.getBoolean(CHIYOGAMI_LOG);
++                ChiyogamiLogger.isShowLogs = showLogs;
++            }
++            
 +        }catch (Exception e){e.printStackTrace();}
 +    }
 +    
 +    public static String getMaxThreads() {return MAX_THREADS;}
++    
++    public static boolean isShowLogs() {return showLogs;}
++}
+diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyogami/log/ChiyogamiLogger.java Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/log/ChiyogamiLogger.java
+--- Original/Tuinity-Server/src/main/java/world/chiyogami/log/ChiyogamiLogger.java	1970-01-01 09:00:00.000000000 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/log/ChiyogamiLogger.java	2021-10-25 01:35:49.144375500 +0900
+@@ -0,0 +1,13 @@
++package world.chiyogami.log;
++
++public class ChiyogamiLogger {
++    
++    public static boolean isShowLogs = true;
++    
++    public static void info(String string){
++        if(!isShowLogs) return;
++        string = "Chiyogami : INFO > " + string;
++        System.out.println(string);
++    }
++    
 +}
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java
 --- Original/Tuinity-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java	1970-01-01 09:00:00.000000000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java	2021-10-23 05:33:47.513996000 +0900
-@@ -0,0 +1,90 @@
++++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java	2021-10-25 01:58:06.290997400 +0900
+@@ -0,0 +1,144 @@
 +package world.chiyogami.thread;
 +
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.WorldServer;
++import world.chiyogami.chiyogamilib.WorldThreads;
++import world.chiyogami.log.ChiyogamiLogger;
 +
-+import java.util.HashMap;
-+import java.util.HashSet;
-+import java.util.Map;
-+import java.util.Set;
++import java.util.*;
 +import java.util.concurrent.*;
 +import java.util.concurrent.locks.ReentrantLock;
 +
@@ -1312,8 +1570,6 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +    public static final Set<WorldServer> worldServers = new HashSet<>();
 +    
 +    private static final Map<WorldServer, Future<?>> worldThreadFutureMap = new HashMap<>();
-+    
-+    public static Future<?> getWorldThreadFuture(WorldServer worldServer){return worldThreadFutureMap.get(worldServer);}
 +    
 +    
 +    private static ExecutorService executorService = null;
@@ -1327,22 +1583,68 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +    
 +    private static final Map<WorldServer, WorldServer> waitWorldServerMap = new HashMap<>();
 +    
++    private static final Map<WorldServer, WorldServer> waitedWorldServerMap = new HashMap<>();
++    
 +    private static final ReentrantLock WAIT_REQUEST_LOCK = new ReentrantLock(true);
 +    
++    public static boolean isDoneWorldServerTask(WorldServer worldServer){
++        WAIT_REQUEST_LOCK.lock();
++        try {
++            return worldThreadFutureMap.get(worldServer).isDone();
++        } finally {
++            WAIT_REQUEST_LOCK.unlock();
++        }
++    }
++    
 +    public static void requestWaitForTask(WorldServer from, WorldServer to){
++    
++        if(maxPoolSize == 1) return;
++        if(Thread.currentThread() == MinecraftServer.getServer().serverThread) return;
++        if(!WorldThreads.isWorldThread()) return;
++    
++        ChiyogamiLogger.info("Lock request : " + from.getWorldData().getName() + " -> " + to.getWorldData().getName());
++        
++        Future<?> worldServerFuture = null;
++        
 +        WAIT_REQUEST_LOCK.lock();
 +        try{
 +            if(!waitWorldServerMap.containsKey(from)){
-+                if(getWaitWorldServer(to) != from) {
-+                    waitWorldServerMap.put(from, to);
-+                    worldThreadFutureMap.get(to).get();
++                
++                WorldServer lowest = getWaitWorldServer(to);
++                
++                if(lowest != from) {
++                    WorldServer highest = getWaitedWorldServer(to);
++                    waitWorldServerMap.put(from, highest);
++                    waitedWorldServerMap.put(highest, from);
++    
++                    ChiyogamiLogger.info("Wait thread : " + from.getWorldData().getName() + " -> " + highest.getWorldData().getName());
++                    worldServerFuture = worldThreadFutureMap.get(highest);
++                }
++            }else{
++                WorldServer fromHighest = getWaitedWorldServer(from);
++                WorldServer highest = getWaitedWorldServer(to);
++                WorldServer lowest = getWaitWorldServer(to);
++    
++                if(highest != fromHighest) {
++                    WorldServer low = waitWorldServerMap.get(from);
++                    waitWorldServerMap.put(lowest, low);
++                    waitedWorldServerMap.put(low, lowest);
++                    
++                    waitWorldServerMap.put(from, highest);
++                    waitedWorldServerMap.put(highest, from);
++    
++                    ChiyogamiLogger.info("Wait thread : " + from.getWorldData().getName() + " -> " + highest.getWorldData().getName());
++                    worldServerFuture = worldThreadFutureMap.get(highest);
 +                }
 +            }
-+            
-+        } catch (Exception e) {
-+            e.printStackTrace();
 +        } finally {
 +            WAIT_REQUEST_LOCK.unlock();
++        }
++        
++        if(worldServerFuture != null){
++            try {
++                worldServerFuture.get();
++            } catch (Exception e){e.printStackTrace();}
 +        }
 +    }
 +    
@@ -1353,6 +1655,15 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +        else return getWaitWorldServer(worldServer);
 +    }
 +    
++    public static WorldServer getWaitedWorldServer(WorldServer from){
++        WorldServer worldServer = waitedWorldServerMap.get(from);
++        if(worldServer == null) return from;
++        else return getWaitedWorldServer(worldServer);
++    }
++    
++    public static void shutdown(){
++        executorService.shutdown();
++    }
 +    
 +    public static void doTick(){
 +        int pool = maxPoolSize > 0 ? maxPoolSize : worldServers.size();
@@ -1381,6 +1692,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +        
 +        waitWorldServerMap.clear();
 +        worldThreadFutureMap.clear();
++        waitedWorldServerMap.clear();
 +        worldServers.clear();
 +    }
 +}
