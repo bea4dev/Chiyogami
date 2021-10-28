@@ -1,24 +1,28 @@
---- Original/Paper-Server/pom.xml	2021-08-21 18:25:37.427254700 +0900
-+++ Paper-Server/pom.xml	2021-09-23 02:15:26.862338000 +0900
-@@ -183,8 +183,21 @@
-             <version>4.8.47</version>
-             <scope>test</scope>
-         </dependency>
-+        <dependency>
-+            <groupId>com.github.Be4rJP</groupId>
-+            <artifactId>ChiyogamiLib</artifactId>
-+            <version>6694a80cb2</version>
-+            <scope>compile</scope>
-+        </dependency>
-     </dependencies>
+--- Original/pom.xml	2021-09-26 18:06:49.984155300 +0900
++++ Chiyogami/pom.xml	2021-10-19 04:38:00.616067500 +0900
+@@ -1,11 +1,11 @@
+ <project>
+     <modelVersion>4.0.0</modelVersion>
  
-+    <repositories>
-+        <repository>
-+            <id>jitpack.io</id>
-+            <url>https://jitpack.io</url>
-+        </repository>
-+    </repositories>
-+
-     <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
-     <build>
-         <finalName>paper-${minecraft.version}</finalName>
+-    <groupId>com.tuinity</groupId>
+-    <artifactId>tuinity-parent</artifactId>
++    <groupId>world.chiyogami</groupId>
++    <artifactId>chiyogami-parent</artifactId>
+     <version>dev-SNAPSHOT</version>
+     <packaging>pom</packaging>
+-    <name>Tuinity (Parent)</name>
++    <name>Chiyogami (Parent)</name>
+ 
+     <repositories>
+         <repository>
+@@ -23,8 +23,8 @@
+         <finalName>${project.artifactId}</finalName>
+     </build>
+     <modules>
+-        <module>Tuinity-API</module>
+-        <module>Tuinity-Server</module>
++        <module>Chiyogami-API</module>
++        <module>Chiyogami-Server</module>
+         <module>Paper${file.separator}Paper-MojangAPI</module> <!-- We don't plan on patching this, so this hack is good enough. -->
+     </modules>
+ </project>

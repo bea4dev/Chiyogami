@@ -1,6 +1,6 @@
-diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java
+diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingHandler.java
 --- Original/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-26 18:20:00.194237100 +0900
-+++ Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-26 21:55:47.321367800 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-10-19 05:21:26.672027000 +0900
 @@ -28,34 +28,41 @@
  
  import java.util.ArrayDeque;
@@ -234,9 +234,9 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timing
          }
      }
  
-diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/Timings.java Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/Timings.java
+diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/Timings.java Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/Timings.java
 --- Original/Tuinity-API/src/main/java/co/aikar/timings/Timings.java	2021-09-26 18:20:00.214235300 +0900
-+++ Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/Timings.java	2021-09-26 22:35:56.836091100 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/Timings.java	2021-10-19 05:21:26.673026500 +0900
 @@ -293,4 +293,30 @@
      static TimingHandler ofSafe(@Nullable String groupName, @NotNull String name, @Nullable Timing groupHandler) {
          return TimingsManager.getHandler(groupName, name, groupHandler);
@@ -268,9 +268,9 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timing
 +        return TimingsManager.getHandlerW(groupName, name, groupHandler);
 +    }
  }
-diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java
+diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingsManager.java
 --- Original/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-09-26 18:20:00.215233700 +0900
-+++ Chiyogami/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-09-26 22:08:44.518047800 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-10-19 05:21:26.674025900 +0900
 @@ -41,9 +41,7 @@
  import org.jetbrains.annotations.Nullable;
  
@@ -296,9 +296,9 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timing
      }
  
  
-diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Chiyogami/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Chiyogami/Chiyogami-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 --- Original/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-26 18:20:00.819388600 +0900
-+++ Chiyogami/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-26 22:24:03.219827600 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-10-28 21:35:59.734736800 +0900
 @@ -20,6 +20,7 @@
  import java.util.Map;
  import java.util.Set;
@@ -316,90 +316,58 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/org/bukkit/plug
  
      public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
          server = instance;
-@@ -605,45 +608,50 @@
-      */
-     @Override
-     public void callEvent(@NotNull Event event) {
--        // Paper - replace callEvent by merging to below method
--        if (event.isAsynchronous() && server.isPrimaryThread()) {
--            throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
+@@ -608,32 +611,47 @@
+         // Paper - replace callEvent by merging to below method
+         if (event.isAsynchronous() && server.isPrimaryThread()) {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
 -        } else if (!event.isAsynchronous() && !server.isPrimaryThread() && !server.isStopping() ) {
--            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
--        }
--
--        HandlerList handlers = event.getHandlers();
--        RegisteredListener[] listeners = handlers.getRegisteredListeners();
--
--        for (RegisteredListener registration : listeners) {
--            if (!registration.getPlugin().isEnabled()) {
--                continue;
--            }
--
--            try {
--                registration.callEvent(event);
--            } catch (AuthorNagException ex) {
--                Plugin plugin = registration.getPlugin();
--
--                if (plugin.isNaggable()) {
--                    plugin.setNaggable(false);
--
--                    server.getLogger().log(Level.SEVERE, String.format(
--                            "Nag author(s): '%s' of '%s' about the following: %s",
--                            plugin.getDescription().getAuthors(),
--                            plugin.getDescription().getFullName(),
--                            ex.getMessage()
--                            ));
-+        try {
-+            EVENT_LOCK.lock();
-+            // Paper - replace callEvent by merging to below method
-+            if (event.isAsynchronous() && server.isPrimaryThread()) {
-+                throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
-+            } else if (!event.isAsynchronous() && !server.isPrimaryThread() && !server.isStopping()) {
-+                throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
-+            }
-+    
-+            HandlerList handlers = event.getHandlers();
-+            RegisteredListener[] listeners = handlers.getRegisteredListeners();
-+    
-+            for (RegisteredListener registration : listeners) {
-+                if (!registration.getPlugin().isEnabled()) {
-+                    continue;
-                 }
--            } catch (Throwable ex) {
--                // Paper start - error reporting
--                String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
--                server.getLogger().log(Level.SEVERE, msg, ex);
--                if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
--                    callEvent(new ServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
-+        
-+                try {
-+                    registration.callEvent(event);
-+                } catch (AuthorNagException ex) {
-+                    Plugin plugin = registration.getPlugin();
-+            
-+                    if (plugin.isNaggable()) {
-+                        plugin.setNaggable(false);
-+                
-+                        server.getLogger().log(Level.SEVERE, String.format(
-+                                "Nag author(s): '%s' of '%s' about the following: %s",
-+                                plugin.getDescription().getAuthors(),
-+                                plugin.getDescription().getFullName(),
-+                                ex.getMessage()
-+                        ));
-+                    }
-+                } catch (Throwable ex) {
-+                    // Paper start - error reporting
-+                    String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
-+                    server.getLogger().log(Level.SEVERE, msg, ex);
-+                    if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
-+                        callEvent(new ServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
-+                    }
-+                    // Paper end
-                 }
--                // Paper end
-             }
-+        } finally {
-+            EVENT_LOCK.unlock();
++        } else if (!event.isAsynchronous() && !server.isPrimaryThread() && !server.isStopping()) {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
          }
-     }
- 
+-
++    
++        boolean isSync = !event.isAsynchronous();
++    
++        if(isSync){
++            EVENT_LOCK.lock();
++            try{
++                runEvent(event);
++            } finally {
++                EVENT_LOCK.unlock();
++            }
++        }else{
++            runEvent(event);
++        }
++    }
++    
++    private void runEvent(Event event){
+         HandlerList handlers = event.getHandlers();
+         RegisteredListener[] listeners = handlers.getRegisteredListeners();
+-
++    
+         for (RegisteredListener registration : listeners) {
+             if (!registration.getPlugin().isEnabled()) {
+                 continue;
+             }
+-
++        
+             try {
+                 registration.callEvent(event);
+             } catch (AuthorNagException ex) {
+                 Plugin plugin = registration.getPlugin();
+-
++            
+                 if (plugin.isNaggable()) {
+                     plugin.setNaggable(false);
+-
++                
+                     server.getLogger().log(Level.SEVERE, String.format(
+                             "Nag author(s): '%s' of '%s' about the following: %s",
+                             plugin.getDescription().getAuthors(),
+                             plugin.getDescription().getFullName(),
+                             ex.getMessage()
+-                            ));
++                    ));
+                 }
+             } catch (Throwable ex) {
+                 // Paper start - error reporting
