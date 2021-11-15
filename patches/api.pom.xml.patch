@@ -1,5 +1,5 @@
 --- Original/Tuinity-API/pom.xml	2021-09-27 23:30:43.989390300 +0900
-+++ Chiyogami/Chiyogami-API/pom.xml	2021-11-07 03:43:00.617543100 +0900
++++ Chiyogami/Chiyogami-API/pom.xml	2021-11-16 05:00:29.936575500 +0900
 @@ -3,17 +3,17 @@
           xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
      <modelVersion>4.0.0</modelVersion>

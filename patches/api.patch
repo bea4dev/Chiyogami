@@ -1,6 +1,6 @@
 diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingHandler.java
 --- Original/Tuinity-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-09-27 23:30:43.058124800 +0900
-+++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-11-07 03:43:00.618542300 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingHandler.java	2021-11-16 05:00:29.937574500 +0900
 @@ -28,34 +28,41 @@
  
  import java.util.ArrayDeque;
@@ -236,7 +236,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timing
  
 diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/Timings.java Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/Timings.java
 --- Original/Tuinity-API/src/main/java/co/aikar/timings/Timings.java	2021-09-27 23:30:43.060123500 +0900
-+++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/Timings.java	2021-11-07 03:43:00.619541800 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/Timings.java	2021-11-16 05:00:29.938573600 +0900
 @@ -293,4 +293,30 @@
      static TimingHandler ofSafe(@Nullable String groupName, @NotNull String name, @Nullable Timing groupHandler) {
          return TimingsManager.getHandler(groupName, name, groupHandler);
@@ -270,7 +270,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timing
  }
 diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingsManager.java
 --- Original/Tuinity-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-09-27 23:30:43.061123000 +0900
-+++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-11-07 03:43:00.620541300 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/co/aikar/timings/TimingsManager.java	2021-11-16 05:00:29.939572900 +0900
 @@ -41,9 +41,7 @@
  import org.jetbrains.annotations.Nullable;
  
@@ -298,7 +298,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/co/aikar/timing
  
 diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java Chiyogami/Chiyogami-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 --- Original/Tuinity-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-09-27 23:30:43.565632600 +0900
-+++ Chiyogami/Chiyogami-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-11-07 03:43:00.644527800 +0900
++++ Chiyogami/Chiyogami-API/src/main/java/org/bukkit/plugin/SimplePluginManager.java	2021-11-16 05:00:29.982886900 +0900
 @@ -20,6 +20,7 @@
  import java.util.Map;
  import java.util.Set;
@@ -307,16 +307,18 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/org/bukkit/plug
  import java.util.logging.Level;
  import java.util.regex.Matcher;
  import java.util.regex.Pattern;
-@@ -60,6 +61,8 @@
+@@ -60,6 +61,10 @@
      private final Map<String, Map<Permissible, Boolean>> permSubs = new HashMap<String, Map<Permissible, Boolean>>();
      private final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
      private boolean useTimings = false;
 +    
 +    private final ReentrantLock EVENT_LOCK = new ReentrantLock(true);
++    
++    public static boolean synchronizedEvent = true;
  
      public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
          server = instance;
-@@ -591,32 +594,47 @@
+@@ -591,32 +596,50 @@
          // Paper - replace callEvent by merging to below method
          if (event.isAsynchronous() && server.isPrimaryThread()) {
              throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
@@ -326,14 +328,17 @@ diff --strip-trailing-cr -urN Original/Tuinity-API/src/main/java/org/bukkit/plug
          }
 -
 +        
-+        boolean isSync = !event.isAsynchronous();
-+    
-+        if(isSync){
-+            EVENT_LOCK.lock();
-+            try{
++        if(synchronizedEvent) {
++            boolean isSync = !event.isAsynchronous();
++            if (isSync) {
++                EVENT_LOCK.lock();
++                try {
++                    runEvent(event);
++                } finally {
++                    EVENT_LOCK.unlock();
++                }
++            } else {
 +                runEvent(event);
-+            } finally {
-+                EVENT_LOCK.unlock();
 +            }
 +        }else{
 +            runEvent(event);
