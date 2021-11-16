@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Be4rJP <bea0224@outlook.jp>
+Date: Tue, 16 Nov 2021 18:49:28 +0900
+Subject: [PATCH] Add synchronized-event setting
+
+
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index f6b0fd86d998c1424ca126e276c3b4854f1ebad9..910313802b48daf4fa74bbc27e1666f4fa65e303 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -64,6 +64,8 @@ public final class SimplePluginManager implements PluginManager {
+     private File pluginsDirectory; public @Nullable File pluginsDirectory() { return this.pluginsDirectory; } // Paper
+     
+     private final ReentrantLock EVENT_LOCK = new ReentrantLock(true); // Chiyogami
++    
++    public static boolean synchronizedEvent = true; // Chiyogami
+ 
+     public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
+         server = instance;
+@@ -621,14 +623,17 @@ public final class SimplePluginManager implements PluginManager {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+         }
+     
+-        boolean isSync = !event.isAsynchronous();
+-    
+-        if(isSync && !server.isPrimaryThreadNotWorldThread()){
+-            EVENT_LOCK.lock();
+-            try{
++        if(synchronizedEvent) {
++            boolean isSync = !event.isAsynchronous();
++            if (isSync) {
++                EVENT_LOCK.lock();
++                try {
++                    runEvent(event);
++                } finally {
++                    EVENT_LOCK.unlock();
++                }
++            } else {
+                 runEvent(event);
+-            } finally {
+-                EVENT_LOCK.unlock();
+             }
+         }else{
+             runEvent(event);

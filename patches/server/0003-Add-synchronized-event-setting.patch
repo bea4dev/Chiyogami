@@ -1,0 +1,231 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Be4rJP <bea0224@outlook.jp>
+Date: Tue, 16 Nov 2021 18:49:28 +0900
+Subject: [PATCH] Add synchronized-event setting
+
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 49c852ea4cc6357b45dd8ffa3ed65dfbb596332b..db0f10fc8626b671cad972e51854a730562a1302 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -1,22 +1,17 @@
+ package net.minecraft.server.dedicated;
+ 
+ import com.google.common.base.Strings;
+-import com.google.common.collect.Lists;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.authlib.GameProfileRepository;
+ import com.mojang.authlib.minecraft.MinecraftSessionService;
+ import com.mojang.datafixers.DataFixer;
+-import java.io.BufferedReader;
++
+ import java.io.BufferedWriter;
+ import java.io.IOException;
+-import java.io.InputStreamReader;
+ import java.net.InetAddress;
+ import java.net.Proxy;
+-import java.nio.charset.StandardCharsets;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
+-import java.util.Collections;
+-import java.util.List;
+ import java.util.Locale;
+ import java.util.Optional;
+ import java.util.concurrent.Executor;
+@@ -71,6 +66,7 @@ import co.aikar.timings.MinecraftTimings; // Paper
+ import org.bukkit.event.server.ServerCommandEvent;
+ import org.bukkit.craftbukkit.util.Waitable;
+ import org.bukkit.event.server.RemoteServerCommandEvent;
++import world.chiyogami.config.ChiyogamiConfig;
+ // CraftBukkit end
+ 
+ public class DedicatedServer extends MinecraftServer implements ServerInterface {
+@@ -224,7 +220,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // load mappings for stacktrace deobf and etc.
+         io.papermc.paper.brigadier.PaperBrigadierProviderImpl.INSTANCE.getClass(); // init PaperBrigadierProvider
+         // Paper end
+-        world.chiyogami.ChiyogamiConfig.load(); // Chiyogami
++        ChiyogamiConfig.load(); // Chiyogami
+ 
+         this.setPvpAllowed(dedicatedserverproperties.pvp);
+         this.setFlightAllowed(dedicatedserverproperties.allowFlight);
+diff --git a/src/main/java/world/chiyogami/ChiyogamiConfig.java b/src/main/java/world/chiyogami/ChiyogamiConfig.java
+deleted file mode 100644
+index 7ae111e664f3c73522d5ad6e2f8a7fea97ef548e..0000000000000000000000000000000000000000
+--- a/src/main/java/world/chiyogami/ChiyogamiConfig.java
++++ /dev/null
+@@ -1,56 +0,0 @@
+-package world.chiyogami;
+-
+-import org.bukkit.configuration.file.YamlConfiguration;
+-import world.chiyogami.chiyogamilib.monitor.WorkMode;
+-import world.chiyogami.log.ChiyogamiLogger;
+-import world.chiyogami.thread.WorldThreadPool;
+-
+-import java.io.File;
+-
+-public final class ChiyogamiConfig {
+-    
+-    private static final String MAX_THREADS = "max-world-threads";
+-    
+-    private static final String CHIYOGAMI_LOG = "show-detail-log";
+-    
+-    
+-    private static YamlConfiguration yml;
+-    
+-    private static int maxThreads = 0;
+-    
+-    private static boolean showLogs = true;
+-    
+-    
+-    public static void load(){
+-        try {
+-            
+-            File file = new File("chiyogami.yml");
+-            
+-            if (file.exists()) {
+-                yml = YamlConfiguration.loadConfiguration(file);
+-            } else {
+-                yml = new YamlConfiguration();
+-                yml.set(MAX_THREADS, 0);
+-                yml.set(CHIYOGAMI_LOG, true);
+-                yml.save(file);
+-            }
+-            
+-            if(yml.contains(MAX_THREADS)){
+-                maxThreads = yml.getInt(MAX_THREADS);
+-                WorldThreadPool.setMaxPoolSize(maxThreads);
+-                WorkMode.MULTI_THREAD_TICK = maxThreads != 1;
+-            }
+-            
+-            if(yml.contains(CHIYOGAMI_LOG)){
+-                showLogs = yml.getBoolean(CHIYOGAMI_LOG);
+-                ChiyogamiLogger.isShowLogs = showLogs;
+-            }
+-            
+-        }catch (Exception e){e.printStackTrace();}
+-    }
+-    
+-    public static String getMaxThreads() {return MAX_THREADS;}
+-    
+-    public static boolean isShowLogs() {return showLogs;}
+-}
+-
+diff --git a/src/main/java/world/chiyogami/config/ChiyogamiConfig.java b/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c477c94df2b8ea7639e79aa294f91ef52059e895
+--- /dev/null
++++ b/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
+@@ -0,0 +1,112 @@
++package world.chiyogami.config;
++
++import org.bukkit.configuration.file.YamlConfiguration;
++import org.bukkit.plugin.SimplePluginManager;
++import world.chiyogami.chiyogamilib.monitor.WorkMode;
++import world.chiyogami.log.ChiyogamiLogger;
++import world.chiyogami.thread.WorldThreadPool;
++
++import java.io.File;
++import java.util.ArrayList;
++import java.util.List;
++
++public final class ChiyogamiConfig {
++    
++    private static final int VERSION = 1;
++    
++    private static final List<ConfigComponent<?>> configComponentList = new ArrayList<>();
++    
++    private static final ConfigComponent<Integer> CONFIG_VERSION = new ConfigComponent<>("config-version", VERSION, VERSION);
++    private static final ConfigComponent<Integer> MAX_WORLD_THREADS = new ConfigComponent<>("max-world-threads", 0, 0);
++    private static final ConfigComponent<Boolean> SHOW_CHIYOGAMI_LOG = new ConfigComponent<>("show-detail-log", true, 0);
++    private static final ConfigComponent<Boolean> SYNCHRONIZED_EVENT = new ConfigComponent<>("synchronized-event", true, 1);
++    
++    
++    private static void setDefaultValues(YamlConfiguration yml){
++        int configVer = 0;
++        if(yml.contains(CONFIG_VERSION.path)) configVer = yml.getInt(CONFIG_VERSION.path);
++        
++        for(ConfigComponent<?> configComponent : configComponentList){
++            String path = configComponent.path;
++            Object defaultValue = configComponent.defaultValue;
++            int componentVer = configComponent.version;
++            
++            if(configVer < componentVer || !yml.contains(path)){
++                yml.set(path, defaultValue);
++            }
++        }
++    }
++    
++    
++    private static void loadValues(YamlConfiguration yml){
++        for(ConfigComponent<?> configComponent : configComponentList){
++            String path = configComponent.path;
++            if(yml.contains(path)){
++                try {
++                    configComponent.setValue(yml.get(path));
++                }catch (Exception e){e.printStackTrace();}
++            }
++        }
++    }
++    
++    
++    private static class ConfigComponent<T>{
++        
++        private final String path;
++        
++        private final T defaultValue;
++        
++        private final int version;
++        
++        private T value = null;
++        
++        private ConfigComponent(String path, T defaultValue, int version){
++            this.path = path;
++            this.defaultValue = defaultValue;
++            this.version = version;
++            configComponentList.add(this);
++        }
++        
++        private void setValue(Object value) {this.value = (T)value;}
++        
++        private T getValue() {
++            if(value != null) return value;
++            return defaultValue;
++        }
++    }
++    
++    
++    
++    
++    public static void load(){
++        try {
++            
++            File file = new File("chiyogami.yml");
++            
++            YamlConfiguration yml;
++            if (file.exists()) {
++                yml = YamlConfiguration.loadConfiguration(file);
++            } else {
++                yml = new YamlConfiguration();
++            }
++            setDefaultValues(yml);
++            yml.save(file);
++            
++            loadValues(yml);
++            
++            WorkMode.MULTI_THREAD_TICK = MAX_WORLD_THREADS.getValue() != 1;
++            WorldThreadPool.setMaxPoolSize(MAX_WORLD_THREADS.getValue());
++            
++            ChiyogamiLogger.isShowLogs = SHOW_CHIYOGAMI_LOG.getValue();
++            
++            SimplePluginManager.synchronizedEvent = SYNCHRONIZED_EVENT.getValue();
++            
++        }catch (Exception e){e.printStackTrace();}
++    }
++    
++    public static int getMaxWorldThreads() {return MAX_WORLD_THREADS.getValue();}
++    
++    public static boolean isShowLogs() {return SHOW_CHIYOGAMI_LOG.getValue();}
++    
++    public static boolean isSynchronizedEvent(){return SYNCHRONIZED_EVENT.getValue();}
++}
