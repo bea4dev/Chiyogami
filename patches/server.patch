@@ -1,6 +1,6 @@
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java Chiyogami/Chiyogami-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 --- Original/Tuinity-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java	2021-09-26 18:20:13.862173700 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java	2021-12-12 19:55:27.437211200 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/co/aikar/timings/WorldTimingsHandler.java	2022-01-02 18:53:11.486479400 +0900
 @@ -73,71 +73,71 @@
      public WorldTimingsHandler(World server) {
          String name = ((WorldDataServer) server.getWorldData()).getName() + " - ";
@@ -138,7 +138,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/co/aikar/tim
  }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java Chiyogami/Chiyogami-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java
 --- Original/Tuinity-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java	2021-09-26 18:20:17.583383300 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java	2021-12-12 19:55:27.438210700 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/com/tuinity/tuinity/util/CachedLists.java	2022-01-02 18:53:11.487478900 +0900
 @@ -1,74 +1,251 @@
  package com.tuinity.tuinity.util;
  
@@ -436,7 +436,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/com/tuinity/
  }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java	2021-09-26 18:20:18.110781400 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java	2021-12-12 19:55:27.584127500 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java	2022-01-02 18:53:11.630397600 +0900
 @@ -1,19 +1,14 @@
  package net.minecraft.server.dedicated;
  
@@ -476,7 +476,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          this.setAllowFlight(dedicatedserverproperties.allowFlight);
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/level/ChunkProviderServer.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/level/ChunkProviderServer.java	2021-09-26 18:20:19.173809700 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/level/ChunkProviderServer.java	2021-12-12 19:55:27.442208200 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/level/ChunkProviderServer.java	2022-01-02 18:53:11.491476700 +0900
 @@ -51,6 +51,7 @@
  import it.unimi.dsi.fastutil.objects.Object2BooleanLinkedOpenHashMap;
  import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
@@ -568,7 +568,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              return this.getChunkAtIfLoadedMainThread(i, j); // Paper - optimise for loaded chunks
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/level/PlayerChunkMap.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/level/PlayerChunkMap.java	2021-09-26 18:20:19.633545400 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/level/PlayerChunkMap.java	2021-12-12 19:55:27.539153800 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/level/PlayerChunkMap.java	2022-01-02 18:53:11.585422600 +0900
 @@ -34,11 +34,8 @@
  import java.util.Optional;
  import java.util.Queue;
@@ -593,7 +593,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          return this.updatingChunks.getVisibleAsync(i);
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/level/WorldServer.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/level/WorldServer.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/level/WorldServer.java	2021-09-26 18:20:19.389684800 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/level/WorldServer.java	2021-12-12 19:55:27.541152600 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/level/WorldServer.java	2022-01-02 18:53:11.587422100 +0900
 @@ -24,16 +24,10 @@
  import java.io.Writer;
  import java.nio.file.Files;
@@ -661,7 +661,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
                  entity1.g(entity1.locX(), entity1.locY(), entity1.locZ());
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/MCUtil.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MCUtil.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-09-26 18:20:19.167813600 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MCUtil.java	2021-12-12 19:55:27.439210300 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MCUtil.java	2022-01-02 18:53:11.488478500 +0900
 @@ -379,7 +379,7 @@
       * @return
       */
@@ -682,7 +682,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/MinecraftServer.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MinecraftServer.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-09-26 18:20:18.106784000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2021-12-12 19:55:27.537153900 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/MinecraftServer.java	2022-01-02 18:53:11.584422800 +0900
 @@ -1,5 +1,6 @@
  package net.minecraft.server;
  
@@ -892,7 +892,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              this.customFunctionData.a(this.dataPackResources.a());
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/network/PlayerConnection.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/network/PlayerConnection.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/network/PlayerConnection.java	2021-09-26 18:20:19.544596600 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/network/PlayerConnection.java	2021-12-12 19:55:27.618107900 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/network/PlayerConnection.java	2022-01-02 18:53:11.662378600 +0900
 @@ -220,6 +220,7 @@
  import org.bukkit.inventory.SmithingInventory;
  import org.bukkit.util.NumberConversions;
@@ -947,7 +947,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
      // Tuinity end - optimise out extra getCubes
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/server/players/PlayerList.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/players/PlayerList.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/server/players/PlayerList.java	2021-09-26 18:20:19.188799900 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/players/PlayerList.java	2021-12-12 19:55:27.620106800 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/server/players/PlayerList.java	2022-01-02 18:53:11.664377400 +0900
 @@ -122,6 +122,7 @@
  import org.bukkit.event.player.PlayerLoginEvent;
  import org.bukkit.event.player.PlayerQuitEvent;
@@ -966,7 +966,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          this.j.put(entityplayer.getUniqueID(), entityplayer);
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/util/thread/IAsyncTaskHandler.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/util/thread/IAsyncTaskHandler.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/util/thread/IAsyncTaskHandler.java	2021-09-26 18:20:14.050735200 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/util/thread/IAsyncTaskHandler.java	2021-12-12 19:55:27.449204300 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/util/thread/IAsyncTaskHandler.java	2022-01-02 18:53:11.497473100 +0900
 @@ -8,6 +8,7 @@
  import java.util.function.BooleanSupplier;
  import org.apache.logging.log4j.LogManager;
@@ -986,7 +986,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
      protected abstract Thread getThread();
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/world/entity/Entity.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/entity/Entity.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/world/entity/Entity.java	2021-09-26 18:20:18.786030800 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/entity/Entity.java	2021-12-12 19:55:27.543150800 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/entity/Entity.java	2022-01-02 18:53:11.589420600 +0900
 @@ -140,6 +140,7 @@
  import org.bukkit.event.entity.EntityPoseChangeEvent;
  import org.bukkit.event.player.PlayerTeleportEvent;
@@ -1030,7 +1030,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
              this.world.getMethodProfiler().enter("changeDimension");
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/world/entity/EntityLiving.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/entity/EntityLiving.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/world/entity/EntityLiving.java	2021-09-26 18:20:16.817985300 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/entity/EntityLiving.java	2021-12-12 19:55:27.452202900 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/entity/EntityLiving.java	2022-01-02 18:53:11.500470800 +0900
 @@ -2974,7 +2974,7 @@
          }
          // Paper - end don't run getEntities if we're not going to use its result
@@ -1042,7 +1042,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
          // Tuinity end - reduce memory allocation from collideNearby
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/world/entity/EntityTypes.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/entity/EntityTypes.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/world/entity/EntityTypes.java	2021-09-26 18:20:14.065725900 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/entity/EntityTypes.java	2021-12-12 19:55:27.453202400 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/entity/EntityTypes.java	2022-01-02 18:53:11.502470600 +0900
 @@ -1,10 +1,13 @@
  package net.minecraft.world.entity;
  
@@ -1088,7 +1088,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
      public Entity spawnCreature(WorldServer worldserver, @Nullable ItemStack itemstack, @Nullable EntityHuman entityhuman, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1) {
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/world/level/chunk/Chunk.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/level/chunk/Chunk.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/world/level/chunk/Chunk.java	2021-09-26 18:20:19.207788800 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/level/chunk/Chunk.java	2021-12-12 19:55:27.544150300 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/level/chunk/Chunk.java	2022-01-02 18:53:11.591419300 +0900
 @@ -14,6 +14,7 @@
  import java.util.Map;
  import java.util.Map.Entry;
@@ -1099,7 +1099,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
  import java.util.function.Supplier;
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraft/world/level/World.java Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/level/World.java
 --- Original/Tuinity-Server/src/main/java/net/minecraft/world/level/World.java	2021-09-26 18:20:19.203791400 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/level/World.java	2021-12-12 19:55:27.455201300 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/net/minecraft/world/level/World.java	2022-01-02 18:53:11.503470000 +0900
 @@ -91,6 +91,7 @@
  import org.bukkit.craftbukkit.block.CraftBlockState;
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
@@ -1137,7 +1137,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/net/minecraf
                  double closestDistance = Double.MAX_VALUE;
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 --- Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-09-26 18:20:15.646140400 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2021-12-12 19:55:27.457199900 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftServer.java	2022-01-02 18:53:11.506467400 +0900
 @@ -225,12 +225,13 @@
  import org.yaml.snakeyaml.error.MarkedYAMLException;
  
@@ -1164,7 +1164,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/c
  
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 --- Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-09-26 18:20:19.638542800 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2021-12-12 19:55:27.459198800 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/CraftWorld.java	2022-01-02 18:53:11.507467400 +0900
 @@ -268,6 +268,7 @@
  import org.bukkit.util.Consumer;
  import org.bukkit.util.RayTraceResult;
@@ -1184,7 +1184,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/c
              synchronized (world.getChunkProvider().playerChunkMap.updatingChunks) {
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 --- Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java	2021-09-26 18:20:16.930756100 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java	2021-12-12 19:55:27.546149800 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java	2022-01-02 18:53:11.592419800 +0900
 @@ -176,6 +176,7 @@
  import org.bukkit.util.BoundingBox;
  import org.bukkit.util.NumberConversions;
@@ -1203,7 +1203,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/c
              return false;
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 --- Original/Tuinity-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java	2021-09-26 18:20:19.217783400 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java	2021-12-12 19:55:27.547149100 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java	2022-01-02 18:53:11.593419400 +0900
 @@ -137,6 +137,7 @@
  import org.bukkit.scoreboard.Scoreboard;
  
@@ -1234,7 +1234,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/bukkit/c
          if (getHandle().activeContainer != getHandle().defaultContainer) {
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/spigotmc/AsyncCatcher.java Chiyogami/Chiyogami-Server/src/main/java/org/spigotmc/AsyncCatcher.java
 --- Original/Tuinity-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-09-26 18:20:15.787774000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2021-12-12 19:55:27.460198300 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/org/spigotmc/AsyncCatcher.java	2022-01-02 18:53:11.509466100 +0900
 @@ -1,6 +1,7 @@
  package org.spigotmc;
  
@@ -1254,7 +1254,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/org/spigotmc
  }
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyogami/bridge/ParallelWorldBridge.java Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/bridge/ParallelWorldBridge.java
 --- Original/Tuinity-Server/src/main/java/world/chiyogami/bridge/ParallelWorldBridge.java	1970-01-01 09:00:00.000000000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/bridge/ParallelWorldBridge.java	2021-12-12 19:55:27.622105600 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/bridge/ParallelWorldBridge.java	2022-01-02 18:53:11.665376800 +0900
 @@ -0,0 +1,19 @@
 +package world.chiyogami.bridge;
 +
@@ -1277,7 +1277,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyogami/bridge/WrappedParallelWorld.java Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/bridge/WrappedParallelWorld.java
 --- Original/Tuinity-Server/src/main/java/world/chiyogami/bridge/WrappedParallelWorld.java	1970-01-01 09:00:00.000000000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/bridge/WrappedParallelWorld.java	2021-12-12 19:55:27.622105600 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/bridge/WrappedParallelWorld.java	2022-01-02 18:53:11.666376200 +0900
 @@ -0,0 +1,60 @@
 +package world.chiyogami.bridge;
 +
@@ -1341,7 +1341,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +}
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyogami/config/ChiyogamiConfig.java Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
 --- Original/Tuinity-Server/src/main/java/world/chiyogami/config/ChiyogamiConfig.java	1970-01-01 09:00:00.000000000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/config/ChiyogamiConfig.java	2021-12-12 19:55:27.623105300 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/config/ChiyogamiConfig.java	2022-01-02 18:53:11.667375300 +0900
 @@ -0,0 +1,117 @@
 +package world.chiyogami.config;
 +
@@ -1462,7 +1462,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyogami/log/ChiyogamiLogger.java Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/log/ChiyogamiLogger.java
 --- Original/Tuinity-Server/src/main/java/world/chiyogami/log/ChiyogamiLogger.java	1970-01-01 09:00:00.000000000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/log/ChiyogamiLogger.java	2021-12-12 19:55:27.550146900 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/log/ChiyogamiLogger.java	2022-01-02 18:53:11.596416000 +0900
 @@ -0,0 +1,15 @@
 +package world.chiyogami.log;
 +
@@ -1481,7 +1481,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +
 diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java
 --- Original/Tuinity-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java	1970-01-01 09:00:00.000000000 +0900
-+++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java	2021-12-12 19:55:27.551146900 +0900
++++ Chiyogami/Chiyogami-Server/src/main/java/world/chiyogami/thread/WorldThreadPool.java	2022-01-02 18:53:11.694360000 +0900
 @@ -0,0 +1,160 @@
 +package world.chiyogami.thread;
 +
@@ -1609,7 +1609,7 @@ diff --strip-trailing-cr -urN Original/Tuinity-Server/src/main/java/world/chiyog
 +    }
 +    
 +    public static void shutdown(){
-+        executorService.shutdown();
++        if(executorService != null) executorService.shutdown();
 +    }
 +    
 +    public static void doTick(){
