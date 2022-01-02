@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Be4rJP <bea0224@outlook.jp>
+Date: Sun, 2 Jan 2022 19:53:32 +0900
+Subject: [PATCH] Update log4j2 and fix #3
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 9a1694539d97ecdbce32e8d97d7a1db671387381..7a4d9978a5e9d47aa93e676c1ab3d4e602a20f64 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -34,12 +34,12 @@ dependencies {
+           all its classes to check if they are plugins.
+           Scanning takes about 1-2 seconds so adding this speeds up the server start.
+      */
+-    implementation("org.apache.logging.log4j:log4j-core:2.15.0") // Paper - implementation
+-    annotationProcessor("org.apache.logging.log4j:log4j-core:2.15.0") // Paper - Needed to generate meta for out hex color converter plugin
++    implementation("org.apache.logging.log4j:log4j-core:2.17.0") // Paper - implementation
++    annotationProcessor("org.apache.logging.log4j:log4j-core:2.17.0") // Paper - Needed to generate meta for out hex color converter plugin
+     // Paper end
+-    implementation("org.apache.logging.log4j:log4j-iostreams:2.15.0") // Paper
+-    implementation("org.apache.logging.log4j:log4j-slf4j18-impl:2.15.0") // Paper
+-    implementation("org.apache.logging.log4j:log4j-api:2.15.0") // Paper
++    implementation("org.apache.logging.log4j:log4j-iostreams:2.17.0") // Paper
++    implementation("org.apache.logging.log4j:log4j-slf4j18-impl:2.17.0") // Paper
++    implementation("org.apache.logging.log4j:log4j-api:2.17.0") // Paper
+     implementation("org.ow2.asm:asm:9.2")
+     implementation("org.ow2.asm:asm-commons:9.2") // Paper - ASM event executor generation
+     implementation("com.googlecode.json-simple:json-simple:1.1.1") {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index a3897c8c4c013a7f30284f2e2f67fcb5de58eeb6..a64b297e18a207d16edb4c5843acc70ec3a3e216 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1654,7 +1654,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 this.profiler.push("tick");
+     
+                 try {
+-                    worldserver.timings.doTick.startTiming(); // Spigot
++                    ((TimingHandler.WorldTiming)worldserver.timings.doTick).startTiming(true); // Spigot
+                     worldserver.tick(staticBooleanSupplier);
+                     // Paper start
+                     for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
+diff --git a/src/main/java/world/chiyogami/thread/WorldThreadPool.java b/src/main/java/world/chiyogami/thread/WorldThreadPool.java
+index 3ef46a7977230d6abe5bb4cd3c3ca8374bc8df51..d82a1b95c1deb194c4d98c623032364631c6cc9b 100644
+--- a/src/main/java/world/chiyogami/thread/WorldThreadPool.java
++++ b/src/main/java/world/chiyogami/thread/WorldThreadPool.java
+@@ -124,7 +124,7 @@ public class WorldThreadPool {
+     }
+     
+     public static void shutdown(){
+-        executorService.shutdown();
++        if(executorService != null) executorService.shutdown();
+     }
+     
+     public static void doTick(){
