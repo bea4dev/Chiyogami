@@ -5,6 +5,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = "forktest"
+rootProject.name = "Chiyogami"
 
-include("forktest-api", "forktest-server")
+include("Chiyogami-api", "Chiyogami-server")

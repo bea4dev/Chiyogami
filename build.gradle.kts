@@ -50,7 +50,7 @@ subprojects {
 }
 
 paperweight {
-    serverProject.set(project(":forktest-server"))
+    serverProject.set(project(":Chiyogami-server"))
 
     remapRepo.set("https://maven.fabricmc.net/")
     decompileRepo.set("https://files.minecraftforge.net/maven/")
@@ -58,10 +58,10 @@ paperweight {
     usePaperUpstream(providers.gradleProperty("paperRef")) {
         withPaperPatcher {
             apiPatchDir.set(layout.projectDirectory.dir("patches/api"))
-            apiOutputDir.set(layout.projectDirectory.dir("forktest-api"))
+            apiOutputDir.set(layout.projectDirectory.dir("Chiyogami-api"))
 
             serverPatchDir.set(layout.projectDirectory.dir("patches/server"))
-            serverOutputDir.set(layout.projectDirectory.dir("forktest-server"))
+            serverOutputDir.set(layout.projectDirectory.dir("Chiyogami-server"))
         }
     }
 }
@@ -71,7 +71,7 @@ paperweight {
 //
 
 tasks.generateDevelopmentBundle {
-    apiCoordinates.set("com.example.paperfork:forktest-api")
+    apiCoordinates.set("world.chiyogami:Chiyogami-api")
     mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
     libraryRepositories.set(
         listOf(
@@ -86,7 +86,7 @@ tasks.generateDevelopmentBundle {
 
 allprojects {
     // Publishing API:
-    // ./gradlew :ForkTest-API:publish[ToMavenLocal]
+    // ./gradlew :Chiyogami-API:publish[ToMavenLocal]
     publishing {
         repositories {
             maven {
