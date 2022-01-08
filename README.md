@@ -34,8 +34,8 @@ How to build
 ビルドを実行するには、git, jdk16が必要です。
 
 1. リポジトリを [ダウンロード](https://codeload.github.com/Be4rJP/Chiyogami/zip/refs/heads/ver/1.17.1) or clone して解凍します。
-2. 解凍したフォルダ上でWindowsの場合はgit-bash、linux or Macの場合はターミナルを開き```./gradlew applyPatches```を実行したあと```./gradlew reobfJar```を実行します
-3. ```Chiyogami-Server/build/libs```内にjarファイルが生成されていれば成功です
+2. 解凍したフォルダ上でWindowsの場合はgit-bash、linux or Macの場合はターミナルを開き```./gradlew applyPatches```を実行したあと```./gradlew createReobfBundlerJar```を実行します
+3. ```build/libs```内にjarファイルが生成されていれば成功です
 
 For developer
 ------
