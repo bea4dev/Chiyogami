@@ -53,8 +53,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: jar
-          path: jar
-      - run: tree
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -62,7 +60,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.constants.outputs.minecraft-version }}-${{ github.run_number }}
-          release_name: ${{ needs.constants.outputs.minecraft-version }} ${{ github.event.head_commit.message }}
+          release_name: ${{ needs.constants.outputs.minecraft-version }}-${{ github.run_number }} ${{ github.event.head_commit.message }}
           body: ""
           draft: false
           prerelease: false
@@ -73,6 +71,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./jar/${{ needs.build.outputs.filename }}
+          asset_path: ./${{ needs.build.outputs.filename }}
           asset_name: ${{ needs.build.outputs.filename }}
           asset_content_type: application/zip
