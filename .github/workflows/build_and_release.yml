@@ -25,7 +25,6 @@ jobs:
         run: git config --global user.email "actions@github.com" && git config --global user.name "Github Actions"
       - name: Build
         run: ./buildChiyogami.sh
-      - run: tree
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         if: "!failure()"
