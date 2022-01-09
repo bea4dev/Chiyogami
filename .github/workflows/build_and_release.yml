@@ -53,7 +53,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: jar
-          path: ~/${{ needs.build.outputs.filename }}
+          path: ~/
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
