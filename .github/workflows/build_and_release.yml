@@ -12,7 +12,7 @@ jobs:
     needs: [constants]
     runs-on: ubuntu-latest
     outputs:
-      filename: ${{ steps.get-filename.outputs.filename }}
+      filename: Chiyogami-${{ needs.constants.outputs.minecraft-version }}.jar
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -26,15 +26,12 @@ jobs:
       - name: Build
         run: ./buildChiyogami.sh
       - run: tree
-      - name: Get file name
-        id: get-filename
-        run: echo ::set-output name=filename::$(ls -1 ./build/libs/)
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         if: "!failure()"
         with:
           name: jar
-          path: build/libs/${{ steps.get-filename.outputs.filename }}
+          path: ./Chiyogami-${{ needs.constants.outputs.minecraft-version }}.jar
   release:
     runs-on: ubuntu-latest
     needs: [build,constants]
