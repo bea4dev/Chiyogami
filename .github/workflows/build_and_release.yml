@@ -1,4 +1,4 @@
-name: Patch and Build
+name: Build and release
 on: push
 jobs:
   constants:
@@ -12,7 +12,7 @@ jobs:
     outputs:
       filename: ${{ steps.get-filename.outputs.filename }}
     steps:
-      - name: Checkout Git Repository
+      - name: Checkout
         uses: actions/checkout@v2
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1
@@ -59,8 +59,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ needs.constants.minecraft-version }}-${{ github.run_number }}
-          release_name: ${{ needs.constants.minecraft-version }} ${{ github.event.head_commit.message }}
+          tag_name: ${{ needs.constants.outputs.minecraft-version }}-${{ github.run_number }}
+          release_name: ${{ needs.constants.outputs.minecraft-version }} ${{ github.event.head_commit.message }}
           body: ""
           draft: false
           prerelease: false
@@ -71,6 +71,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ~/${{ needs.build.filename }}
-          asset_name: ${{ needs.build.filename }}
+          asset_path: ~/${{ needs.build.outputs.filename }}
+          asset_name: ${{ needs.build.outputs.filename }}
           asset_content_type: application/zip
