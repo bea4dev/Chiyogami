@@ -1,0 +1,1695 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Be4rJP <bea0224@outlook.jp>
+Date: Thu, 5 May 2022 00:06:41 +0900
+Subject: [PATCH] Chiyogami initial commit
+
+
+diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+index fe79c0add4f7cb18d487c5bb9415c40c5b551ea2..a6cbbf1499b18a0c0382c3435c33da694d381116 100644
+--- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
++++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+@@ -71,69 +71,73 @@ public class WorldTimingsHandler {
+     public WorldTimingsHandler(Level server) {
+         String name = ((PrimaryLevelData) server.getLevelData()).getLevelName() + " - ";
+ 
+-        mobSpawn = Timings.ofSafe(name + "mobSpawn");
+-        doChunkUnload = Timings.ofSafe(name + "doChunkUnload");
+-        scheduledBlocks = Timings.ofSafe(name + "Scheduled Blocks");
+-        scheduledBlocksCleanup = Timings.ofSafe(name + "Scheduled Blocks - Cleanup");
+-        scheduledBlocksTicking = Timings.ofSafe(name + "Scheduled Blocks - Ticking");
+-        chunkTicks = Timings.ofSafe(name + "Chunk Ticks");
+-        lightChunk = Timings.ofSafe(name + "Light Chunk");
+-        chunkTicksBlocks = Timings.ofSafe(name + "Chunk Ticks - Blocks");
+-        doVillages = Timings.ofSafe(name + "doVillages");
+-        doChunkMap = Timings.ofSafe(name + "doChunkMap");
+-        doChunkMapUpdate = Timings.ofSafe(name + "doChunkMap - Update");
+-        doChunkMapToUpdate = Timings.ofSafe(name + "doChunkMap - To Update");
+-        doChunkMapSortMissing = Timings.ofSafe(name + "doChunkMap - Sort Missing");
+-        doChunkMapSortSendToPlayers = Timings.ofSafe(name + "doChunkMap - Sort Send To Players");
+-        doChunkMapPlayersNeedingChunks = Timings.ofSafe(name + "doChunkMap - Players Needing Chunks");
+-        doChunkMapPendingSendToPlayers = Timings.ofSafe(name + "doChunkMap - Pending Send To Players");
+-        doChunkMapUnloadChunks = Timings.ofSafe(name + "doChunkMap - Unload Chunks");
+-        doSounds = Timings.ofSafe(name + "doSounds");
+-        doChunkGC = Timings.ofSafe(name + "doChunkGC");
+-        doPortalForcer = Timings.ofSafe(name + "doPortalForcer");
+-        entityTick = Timings.ofSafe(name + "entityTick");
+-        entityRemoval = Timings.ofSafe(name + "entityRemoval");
+-        tileEntityTick = Timings.ofSafe(name + "tileEntityTick");
+-        tileEntityPending = Timings.ofSafe(name + "tileEntityPending");
++        mobSpawn = Timings.ofSafeForWorld(name + "mobSpawn");
++        doChunkUnload = Timings.ofSafeForWorld(name + "doChunkUnload");
++        scheduledBlocks = Timings.ofSafeForWorld(name + "Scheduled Blocks");
++        scheduledBlocksCleanup = Timings.ofSafeForWorld(name + "Scheduled Blocks - Cleanup");
++        scheduledBlocksTicking = Timings.ofSafeForWorld(name + "Scheduled Blocks - Ticking");
++        chunkTicks = Timings.ofSafeForWorld(name + "Chunk Ticks");
++        lightChunk = Timings.ofSafeForWorld(name + "Light Chunk");
++        chunkTicksBlocks = Timings.ofSafeForWorld(name + "Chunk Ticks - Blocks");
++        doVillages = Timings.ofSafeForWorld(name + "doVillages");
++        doChunkMap = Timings.ofSafeForWorld(name + "doChunkMap");
++        doChunkMapUpdate = Timings.ofSafeForWorld(name + "doChunkMap - Update");
++        doChunkMapToUpdate = Timings.ofSafeForWorld(name + "doChunkMap - To Update");
++        doChunkMapSortMissing = Timings.ofSafeForWorld(name + "doChunkMap - Sort Missing");
++        doChunkMapSortSendToPlayers = Timings.ofSafeForWorld(name + "doChunkMap - Sort Send To Players");
++        doChunkMapPlayersNeedingChunks = Timings.ofSafeForWorld(name + "doChunkMap - Players Needing Chunks");
++        doChunkMapPendingSendToPlayers = Timings.ofSafeForWorld(name + "doChunkMap - Pending Send To Players");
++        doChunkMapUnloadChunks = Timings.ofSafeForWorld(name + "doChunkMap - Unload Chunks");
++        doSounds = Timings.ofSafeForWorld(name + "doSounds");
++        doChunkGC = Timings.ofSafeForWorld(name + "doChunkGC");
++        doPortalForcer = Timings.ofSafeForWorld(name + "doPortalForcer");
++        entityTick = Timings.ofSafeForWorld(name + "entityTick");
++        entityRemoval = Timings.ofSafeForWorld(name + "entityRemoval");
++        tileEntityTick = Timings.ofSafeForWorld(name + "tileEntityTick");
++        tileEntityPending = Timings.ofSafeForWorld(name + "tileEntityPending");
+ 
+-        chunkLoad = Timings.ofSafe(name + "Chunk Load");
+-        chunkLoadPopulate = Timings.ofSafe(name + "Chunk Load - Populate");
+-        syncChunkLoad = Timings.ofSafe(name + "Sync Chunk Load");
+-        chunkLoadLevelTimer = Timings.ofSafe(name + "Chunk Load - Load Level");
+-        chunkIO = Timings.ofSafe(name + "Chunk Load - DiskIO");
+-        chunkPostLoad = Timings.ofSafe(name + "Chunk Load - Post Load");
+-        worldSave = Timings.ofSafe(name + "World Save");
+-        worldSaveLevel = Timings.ofSafe(name + "World Save - Level");
+-        worldSaveChunks = Timings.ofSafe(name + "World Save - Chunks");
+-        chunkSaveData = Timings.ofSafe(name + "Chunk Save - Data");
++        chunkLoad = Timings.ofSafeForWorld(name + "Chunk Load");
++        chunkLoadPopulate = Timings.ofSafeForWorld(name + "Chunk Load - Populate");
++        syncChunkLoad = Timings.ofSafeForWorld(name + "Sync Chunk Load");
++        chunkLoadLevelTimer = Timings.ofSafeForWorld(name + "Chunk Load - Load Level");
++        chunkIO = Timings.ofSafeForWorld(name + "Chunk Load - DiskIO");
++        chunkPostLoad = Timings.ofSafeForWorld(name + "Chunk Load - Post Load");
++        worldSave = Timings.ofSafeForWorld(name + "World Save");
++        worldSaveLevel = Timings.ofSafeForWorld(name + "World Save - Level");
++        worldSaveChunks = Timings.ofSafeForWorld(name + "World Save - Chunks");
++        chunkSaveData = Timings.ofSafeForWorld(name + "Chunk Save - Data");
+ 
+-        tracker1 = Timings.ofSafe(name + "tracker stage 1");
+-        tracker2 = Timings.ofSafe(name + "tracker stage 2");
+-        doTick = Timings.ofSafe(name + "doTick");
+-        tickEntities = Timings.ofSafe(name + "tickEntities");
++        tracker1 = Timings.ofSafeForWorld(name + "tracker stage 1");
++        tracker2 = Timings.ofSafeForWorld(name + "tracker stage 2");
++        doTick = Timings.ofSafeForWorld(name + "doTick");
++        tickEntities = Timings.ofSafeForWorld(name + "tickEntities");
+ 
+-        chunks = Timings.ofSafe(name + "Chunks");
+-        newEntities = Timings.ofSafe(name + "New entity registration");
+-        raids = Timings.ofSafe(name + "Raids");
+-        chunkProviderTick = Timings.ofSafe(name + "Chunk provider tick");
+-        broadcastChunkUpdates = Timings.ofSafe(name + "Broadcast chunk updates");
+-        countNaturalMobs = Timings.ofSafe(name + "Count natural mobs");
++        chunks = Timings.ofSafeForWorld(name + "Chunks");
++        newEntities = Timings.ofSafeForWorld(name + "New entity registration");
++        raids = Timings.ofSafeForWorld(name + "Raids");
++        chunkProviderTick = Timings.ofSafeForWorld(name + "Chunk provider tick");
++        broadcastChunkUpdates = Timings.ofSafeForWorld(name + "Broadcast chunk updates");
++        countNaturalMobs = Timings.ofSafeForWorld(name + "Count natural mobs");
+ 
+ 
+-        miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
++        miscMobSpawning = Timings.ofSafeForWorld(name + "Mob spawning - Misc");
+ 
+-        poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
+-        chunkUnload = Timings.ofSafe(name + "Chunk unload - Chunk");
+-        poiSaveDataSerialization = Timings.ofSafe(name + "Chunk save - POI Data serialization");
+-        chunkSave = Timings.ofSafe(name + "Chunk save - Chunk");
+-        chunkSaveDataSerialization = Timings.ofSafe(name + "Chunk save - Chunk Data serialization");
+-        chunkSaveIOWait = Timings.ofSafe(name + "Chunk save - Chunk IO Wait");
+-        chunkUnloadPrepareSave = Timings.ofSafe(name + "Chunk unload - Async Save Prepare");
+-        chunkUnloadPOISerialization = Timings.ofSafe(name + "Chunk unload - POI Data Serialization");
+-        chunkUnloadDataSave = Timings.ofSafe(name + "Chunk unload - Data Serialization");
++        poiUnload = Timings.ofSafeForWorld(name + "Chunk unload - POI");
++        chunkUnload = Timings.ofSafeForWorld(name + "Chunk unload - Chunk");
++        poiSaveDataSerialization = Timings.ofSafeForWorld(name + "Chunk save - POI Data serialization");
++        chunkSave = Timings.ofSafeForWorld(name + "Chunk save - Chunk");
++        chunkSaveDataSerialization = Timings.ofSafeForWorld(name + "Chunk save - Chunk Data serialization");
++        chunkSaveIOWait = Timings.ofSafeForWorld(name + "Chunk save - Chunk IO Wait");
++        chunkUnloadPrepareSave = Timings.ofSafeForWorld(name + "Chunk unload - Async Save Prepare");
++        chunkUnloadPOISerialization = Timings.ofSafeForWorld(name + "Chunk unload - POI Data Serialization");
++        chunkUnloadDataSave = Timings.ofSafeForWorld(name + "Chunk unload - Data Serialization");
+     }
+ 
+     public static Timing getTickList(ServerLevel worldserver, String timingsType) {
+-        return Timings.ofSafe(((PrimaryLevelData) worldserver.getLevelData()).getLevelName() + " - Scheduled " + timingsType);
++        return Timings.ofSafeForWorld(((PrimaryLevelData) worldserver.getLevelData()).getLevelName() + " - Scheduled " + timingsType);
++    }
++    
++    public static Timing getHandlerForWorld(String name) {
++        return Timings.ofSafeForWorld(name);
+     }
+ }
+diff --git a/src/main/java/io/papermc/paper/util/CachedLists.java b/src/main/java/io/papermc/paper/util/CachedLists.java
+index e08f4e39db4ee3fed62e37364d17dcc5c5683504..b68dcf93af41ad56e07ed03cd63c594bf248d536 100644
+--- a/src/main/java/io/papermc/paper/util/CachedLists.java
++++ b/src/main/java/io/papermc/paper/util/CachedLists.java
+@@ -1,57 +1,185 @@
+ package io.papermc.paper.util;
+ 
+ import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.AABB;
+-import org.bukkit.Bukkit;
+ import org.bukkit.craftbukkit.util.UnsafeList;
++import org.spigotmc.AsyncCatcher;
++import world.chiyogami.thread.WorldThread;
++
+ import java.util.List;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
+ 
+ public final class CachedLists {
+-
++    
++    private final Level level;
++    
++    private final UnsafeList<AABB> TEMP_COLLISION_LIST = new UnsafeList<>(1024);
++    private boolean tempCollisionListInUse;
++    
++    private final UnsafeList<Entity> TEMP_GET_ENTITIES_LIST = new UnsafeList<>(1024);
++    private boolean tempGetEntitiesListInUse;
++    
++    private CachedLists(Level level){
++        this.level = level;
++    }
++    
++    
++    
+     // Paper start - optimise collisions
+-    static final UnsafeList<AABB> TEMP_COLLISION_LIST = new UnsafeList<>(1024);
+-    static boolean tempCollisionListInUse;
+-
+-    public static UnsafeList<AABB> getTempCollisionList() {
+-        if (!Bukkit.isPrimaryThread() || tempCollisionListInUse) {
++    static final Map<Level, CachedLists> cashedListMap = new ConcurrentHashMap<>();
++    
++    public static List<AABB> getTempCollisionList(Level level) {
++        CachedLists cachedLists = cashedListMap.computeIfAbsent(level, CachedLists::new);
++        if (cachedLists.tempCollisionListInUse) {
+             return new UnsafeList<>(16);
+         }
+-        tempCollisionListInUse = true;
+-        return TEMP_COLLISION_LIST;
++    
++        WorldThread worldThread = cachedLists.level.worldThread;
++        if (worldThread != null) {
++            if (worldThread.getCurrentThread() != Thread.currentThread()) {
++                return new UnsafeList<>(16);
++            }
++        }
++    
++        cachedLists.tempCollisionListInUse = true;
++        return cachedLists.TEMP_COLLISION_LIST;
+     }
+-
+-    public static void returnTempCollisionList(List<AABB> list) {
+-        if (list != TEMP_COLLISION_LIST) {
++    
++    
++    public static List<AABB> getTempCollisionList() {
++        for(CachedLists cachedLists : cashedListMap.values()){
++            WorldThread worldThread = cachedLists.level.worldThread;
++            if (worldThread == null) continue;
++            
++            if(Thread.currentThread() == worldThread.getCurrentThread() && !cachedLists.tempCollisionListInUse){
++                cachedLists.tempCollisionListInUse = true;
++                return cachedLists.TEMP_COLLISION_LIST;
++            }
++        }
++        
++        if (!AsyncCatcher.isMainThread()) {
++            return new UnsafeList<>(16);
++        }
++        
++        UnsafeList<AABB> allList = new UnsafeList<>(1024);
++        for(CachedLists cachedLists : cashedListMap.values()){
++            allList.addAll(cachedLists.TEMP_COLLISION_LIST);
++        }
++        return allList;
++    }
++    
++    public static void returnTempCollisionList(List<AABB> list, Level level) {
++        CachedLists cachedLists = cashedListMap.get(level);
++        if (cachedLists == null){
++            return;
++        }
++    
++        if (cachedLists.TEMP_COLLISION_LIST != list) {
+             return;
+         }
+-        ((UnsafeList)list).setSize(0);
+-        tempCollisionListInUse = false;
++    
++        cachedLists.TEMP_COLLISION_LIST.setSize(0);
++        cachedLists.tempCollisionListInUse = false;
+     }
+-
+-    static final UnsafeList<Entity> TEMP_GET_ENTITIES_LIST = new UnsafeList<>(1024);
+-    static boolean tempGetEntitiesListInUse;
+-
+-    public static UnsafeList<Entity> getTempGetEntitiesList() {
+-        if (!Bukkit.isPrimaryThread() || tempGetEntitiesListInUse) {
++    
++    public static void returnTempCollisionList(List<AABB> list) {
++        for(CachedLists cachedLists : cashedListMap.values()){
++            if(cachedLists.TEMP_COLLISION_LIST == list){
++                cachedLists.TEMP_COLLISION_LIST.setSize(0);
++                cachedLists.tempCollisionListInUse = false;
++                return;
++            }
++        }
++        
++        ((UnsafeList<?>)list).setSize(0);
++    }
++    
++    
++    public static List<Entity> getTempGetEntitiesList(Level level) {
++        if (level == null) {
++            return getTempGetEntitiesList();
++        }
++        
++        CachedLists cachedLists = cashedListMap.computeIfAbsent(level, CachedLists::new);
++        if (cachedLists.tempGetEntitiesListInUse) {
+             return new UnsafeList<>(16);
+         }
+-        tempGetEntitiesListInUse = true;
+-        return TEMP_GET_ENTITIES_LIST;
++    
++        WorldThread worldThread = cachedLists.level.worldThread;
++        if (worldThread != null) {
++            if (worldThread.getCurrentThread() != Thread.currentThread()) {
++                return new UnsafeList<>(16);
++            }
++        }
++    
++        cachedLists.tempGetEntitiesListInUse = true;
++        return cachedLists.TEMP_GET_ENTITIES_LIST;
+     }
+-
+-    public static void returnTempGetEntitiesList(List<Entity> list) {
+-        if (list != TEMP_GET_ENTITIES_LIST) {
++    
++    public static List<Entity> getTempGetEntitiesList() {
++        for(CachedLists cachedLists : cashedListMap.values()){
++            WorldThread worldThread = cachedLists.level.worldThread;
++            if (worldThread == null) continue;
++            
++            if(Thread.currentThread() == worldThread.getCurrentThread() && !cachedLists.tempGetEntitiesListInUse){
++                cachedLists.tempGetEntitiesListInUse = true;
++                return cachedLists.TEMP_GET_ENTITIES_LIST;
++            }
++        }
++        
++        if (!AsyncCatcher.isMainThread()) {
++            return new UnsafeList<>(16);
++        }
++        
++        UnsafeList<Entity> allList = new UnsafeList<>(1024);
++        for(CachedLists cachedLists : cashedListMap.values()){
++            allList.addAll(cachedLists.TEMP_GET_ENTITIES_LIST);
++        }
++        return allList;
++    }
++    
++    public static void returnTempGetEntitiesList(List<Entity> list, Level level) {
++        if (level == null) {
++            returnTempGetEntitiesList(list);
+             return;
+         }
+-        ((UnsafeList)list).setSize(0);
+-        tempGetEntitiesListInUse = false;
++        
++        for(CachedLists cachedLists : cashedListMap.values()){
++            if(level == cachedLists.level){
++                if (cachedLists.TEMP_GET_ENTITIES_LIST != list) {
++                    return;
++                }
++                
++                cachedLists.TEMP_GET_ENTITIES_LIST.setSize(0);
++                cachedLists.tempGetEntitiesListInUse = false;
++                return;
++            }
++        }
++    }
++    
++    public static void returnTempGetEntitiesList(List<Entity> list) {
++        for(CachedLists cachedLists : cashedListMap.values()){
++            if(cachedLists.TEMP_GET_ENTITIES_LIST == list){
++                cachedLists.TEMP_GET_ENTITIES_LIST.setSize(0);
++                cachedLists.tempGetEntitiesListInUse = false;
++                return;
++            }
++        }
++        
++        ((UnsafeList<?>)list).setSize(0);
+     }
+     // Paper end - optimise collisions
+-
++    
+     public static void reset() {
+         // Paper start - optimise collisions
+-        TEMP_COLLISION_LIST.completeReset();
+-        TEMP_GET_ENTITIES_LIST.completeReset();
++        //TEMP_COLLISION_LIST.completeReset();
++        for(CachedLists cachedLists : cashedListMap.values()){
++            cachedLists.TEMP_COLLISION_LIST.completeReset();
++            cachedLists.TEMP_GET_ENTITIES_LIST.completeReset();
++        }
++        //TEMP_GET_ENTITIES_LIST.completeReset();
+         // Paper end - optimise collisions
+     }
+ }
+diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
+index a87f6380b2c387fb0cdd40d5087b5c93492e3c88..470f5e9dd5014274e6c6c7c3e72e95c1c3aca181 100644
+--- a/src/main/java/io/papermc/paper/util/CollisionUtil.java
++++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
+@@ -10,6 +10,7 @@ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.level.CollisionGetter;
+ import net.minecraft.world.level.EntityGetter;
++import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.border.WorldBorder;
+@@ -819,7 +820,9 @@ public final class CollisionUtil {
+         // Vanilla for hard collisions has this backwards, and they expand by +epsilon but this causes terrible problems
+         // specifically with boat collisions.
+         aabb = aabb.inflate(-COLLISION_EPSILON, -COLLISION_EPSILON, -COLLISION_EPSILON);
+-        final List<Entity> entities = CachedLists.getTempGetEntitiesList();
++        Level level = null;
++        if (entity != null) level = entity.level;
++        final List<Entity> entities = CachedLists.getTempGetEntitiesList(level);
+         try {
+             if (entity != null && entity.hardCollides()) {
+                 entityGetter.getEntities(entity, aabb, predicate, entities);
+@@ -840,7 +843,7 @@ public final class CollisionUtil {
+                 }
+             }
+         } finally {
+-            CachedLists.returnTempGetEntitiesList(entities);
++            CachedLists.returnTempGetEntitiesList(entities, level);
+         }
+ 
+         return ret;
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index 6aec679e75aa6655b47a552db011924ea3a6c922..4033d62b2854a2b808048e06606bf32c16ba969c 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -331,7 +331,7 @@ public final class MCUtil {
+      * @return
+      */
+     public static void ensureMain(String reason, Runnable run) {
+-        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread) {
++        if (AsyncCatcher.enabled && AsyncCatcher.isAsync()) {
+             if (reason != null) {
+                 new IllegalStateException("Asynchronous " + reason + "!").printStackTrace();
+             }
+@@ -356,7 +356,7 @@ public final class MCUtil {
+      * @return
+      */
+     public static <T> T ensureMain(String reason, Supplier<T> run) {
+-        if (AsyncCatcher.enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread) {
++        if (AsyncCatcher.enabled && AsyncCatcher.isAsync()) {
+             if (reason != null) {
+                 new IllegalStateException("Asynchronous " + reason + "! Blocking thread until it returns ").printStackTrace();
+             }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 90466ed5dc05ef21e685790eb58ac67ac0d5c839..7268ef489b34b4a3b97bf072196d1583db0f40bc 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import co.aikar.timings.TimingHandler;
+ import com.google.common.base.Splitter;
+ import com.google.common.collect.ImmutableList;
+ import co.aikar.timings.Timings;
+@@ -184,6 +185,8 @@ import org.bukkit.event.server.ServerLoadEvent;
+ // CraftBukkit end
+ 
+ import co.aikar.timings.MinecraftTimings; // Paper
++import world.chiyogami.thread.WorldThread;
++import world.chiyogami.thread.WorldThreadPool;
+ 
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements CommandSource, AutoCloseable {
+ 
+@@ -975,6 +978,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         if (this.getConnection() != null) {
+             this.getConnection().stop();
+         }
++    
++        try{ // Chiyogami
++            MinecraftServer.LOGGER.info("Stopping WorldThreadPool");
++            WorldThreadPool.shutdown();
++        }catch (Exception e){e.printStackTrace();}
+ 
+         this.isSaving = true;
+         if (this.playerList != null) {
+@@ -1525,8 +1533,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
+     }
++    
++    private static BooleanSupplier shouldKeepTickingTemp = null;
+ 
+     public void tickChildren(BooleanSupplier shouldKeepTicking) {
++        shouldKeepTickingTemp = shouldKeepTicking;
+         MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
+         this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
+         MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
+@@ -1566,16 +1577,25 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+         // Paper end
+         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
+-
++    
++        TimingHandler.initializeWorldTiming();
++        
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
++    
++            WorldThread worldThread = worldserver.worldThread;
++            if (worldThread.getWorldTickRunnable() == null) {
++            worldThread.setWorldTickRunnable(() -> {
++            worldserver.thread = Thread.currentThread();
++            
+             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+             worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
+ 
++            /*
+             this.profiler.push(() -> {
+                 return worldserver + " " + worldserver.dimension().location();
+-            });
++            });*/
+             /* Drop global time updates
+             if (this.tickCount % 20 == 0) {
+                 this.profiler.push("timeSync");
+@@ -1584,11 +1604,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+             // CraftBukkit end */
+ 
+-            this.profiler.push("tick");
++            //this.profiler.push("tick");
+ 
+             try {
+-                worldserver.timings.doTick.startTiming(); // Spigot
+-                worldserver.tick(shouldKeepTicking);
++                ((TimingHandler.WorldTiming) worldserver.timings.doTick).startTiming(true); // Spigot
++                worldserver.tick(shouldKeepTickingTemp);
+                 // Paper start
+                 for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
+                     regionManager.recalculateRegions();
+@@ -1610,10 +1630,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 throw new ReportedException(crashreport);
+             }
+ 
+-            this.profiler.pop();
+-            this.profiler.pop();
++            //this.profiler.pop();
++            //this.profiler.pop();
+             worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
++            });
++            }
+         }
++    
++        WorldThreadPool.doTick(this.levels.values());
++        
++        TimingHandler.clearWorldTimings();
+ 
+         this.profiler.popPush("connection");
+         MinecraftTimings.connectionTimer.startTiming(); // Spigot
+@@ -2734,6 +2760,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     public final void executeMidTickTasks() {
++        if (Thread.currentThread() != this.serverThread) return;
+         org.spigotmc.AsyncCatcher.catchOp("mid tick chunk task execution");
+         long startTime = System.nanoTime();
+         if ((startTime - lastMidTickExecute) <= CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME || (startTime - lastMidTickExecuteFailure) <= TASK_EXECUTION_FAILURE_BACKOFF) {
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index e28e09aae1d95d9bed50a137e999e6d457e62478..0780e8cf4996c79538747774322db077145b4396 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -235,6 +235,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // load mappings for stacktrace deobf and etc.
+         io.papermc.paper.brigadier.PaperBrigadierProviderImpl.INSTANCE.getClass(); // init PaperBrigadierProvider
+         // Paper end
++    
++        world.chiyogami.config.ChiyogamiConfig.load(); // Chiyogami
+ 
+         this.setPvpAllowed(dedicatedserverproperties.pvp);
+         this.setFlightAllowed(dedicatedserverproperties.allowFlight);
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index ebfaa8d5de5b905bd2dd7778728b8c9939d01252..86ba8baae504e2c8736c590c38583df042ea4a20 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -127,7 +127,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+             return s.toLowerCase(Locale.ROOT);
+         }, "default"));
+         // Paper start - Configurable rcon ip
+-        final String rconIp = this.getStringRaw("rcon.ip");
++        final String rconIp = super.getStringRaw("rcon.ip");
+         this.rconIp = rconIp == null ? this.serverIp : rconIp;
+         // Paper end
+     }
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 6ce27675103d4b691216c6b701b6ceb821af528f..51bcd96b9d99097e47813be54fc231d3081b2c6a 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -111,6 +111,7 @@ import org.slf4j.Logger;
+ import org.bukkit.entity.Player;
+ // CraftBukkit end
+ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
++import org.spigotmc.AsyncCatcher;
+ 
+ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider {
+ 
+@@ -656,7 +657,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     @Nullable
+     public ChunkHolder getVisibleChunkIfPresent(long pos) {
+         // Paper start - Don't copy
+-        if (Thread.currentThread() == this.level.thread) {
++        if (!AsyncCatcher.isAsync()) {
+             return this.updatingChunks.getVisible(pos);
+         }
+         return this.updatingChunks.getVisibleAsync(pos);
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index fb0757d4bb32123641535a88a22bc074b8d2623f..5b38adc73e421e2cb7ad38ce60a4348fea81a91c 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -47,6 +47,7 @@ import net.minecraft.world.level.storage.DimensionDataStorage;
+ import net.minecraft.world.level.storage.LevelData;
+ import net.minecraft.world.level.storage.LevelStorageSource;
+ import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
++import org.spigotmc.AsyncCatcher;
+ 
+ public class ServerChunkCache extends ChunkSource {
+ 
+@@ -143,7 +144,7 @@ public class ServerChunkCache extends ChunkSource {
+     long chunkFutureAwaitCounter; // Paper - private -> package private
+ 
+     public void getEntityTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             this.mainThreadProcessor.execute(() -> {
+                 ServerChunkCache.this.getEntityTickingChunkAsync(x, z, onLoad);
+             });
+@@ -153,7 +154,7 @@ public class ServerChunkCache extends ChunkSource {
+     }
+ 
+     public void getTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             this.mainThreadProcessor.execute(() -> {
+                 ServerChunkCache.this.getTickingChunkAsync(x, z, onLoad);
+             });
+@@ -163,7 +164,7 @@ public class ServerChunkCache extends ChunkSource {
+     }
+ 
+     public void getFullChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             this.mainThreadProcessor.execute(() -> {
+                 ServerChunkCache.this.getFullChunkAsync(x, z, onLoad);
+             });
+@@ -173,7 +174,7 @@ public class ServerChunkCache extends ChunkSource {
+     }
+ 
+     private void getChunkFutureAsynchronously(int x, int z, int ticketLevel, java.util.function.Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>> futureGet, java.util.function.Consumer<LevelChunk> onLoad) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             throw new IllegalStateException();
+         }
+         ChunkPos chunkPos = new ChunkPos(x, z);
+@@ -273,7 +274,7 @@ public class ServerChunkCache extends ChunkSource {
+     void getChunkAtAsynchronously(int chunkX, int chunkZ, int ticketLevel,
+                                   java.util.function.Function<ChunkHolder, CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> function,
+                                   java.util.function.Consumer<ChunkAccess> consumer) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             throw new IllegalStateException();
+         }
+ 
+@@ -469,7 +470,7 @@ public class ServerChunkCache extends ChunkSource {
+     public LevelChunk getChunkAtIfLoadedImmediately(int x, int z) {
+         long k = ChunkPos.asLong(x, z);
+ 
+-        if (Thread.currentThread() == this.mainThread) {
++        if (!AsyncCatcher.isAsync()) {
+             return this.getChunkAtIfLoadedMainThread(x, z);
+         }
+ 
+@@ -495,7 +496,7 @@ public class ServerChunkCache extends ChunkSource {
+     private long asyncLoadSeqCounter;
+ 
+     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkAtAsynchronously(int x, int z, boolean gen, boolean isUrgent) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = new CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>();
+             this.mainThreadProcessor.execute(() -> {
+                 this.getChunkAtAsynchronously(x, z, gen, isUrgent).whenComplete((chunk, ex) -> {
+@@ -616,7 +617,7 @@ public class ServerChunkCache extends ChunkSource {
+     @Override
+     public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
+         final int x1 = x; final int z1 = z; // Paper - conflict on variable change
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             return (ChunkAccess) CompletableFuture.supplyAsync(() -> {
+                 return this.getChunk(x, z, leastStatus, create);
+             }, this.mainThreadProcessor).join();
+@@ -680,7 +681,7 @@ public class ServerChunkCache extends ChunkSource {
+     @Nullable
+     @Override
+     public LevelChunk getChunkNow(int chunkX, int chunkZ) {
+-        if (Thread.currentThread() != this.mainThread) {
++        if (AsyncCatcher.isAsync()) {
+             return null;
+         } else {
+             return this.getChunkAtIfLoadedMainThread(chunkX, chunkZ); // Paper - optimise for loaded chunks
+@@ -694,7 +695,7 @@ public class ServerChunkCache extends ChunkSource {
+     }
+ 
+     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFuture(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
+-        boolean flag1 = Thread.currentThread() == this.mainThread;
++        boolean flag1 = !AsyncCatcher.isAsync();
+         CompletableFuture completablefuture;
+ 
+         if (flag1) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 3b1a34b34979ab436ccd33f0a85bfae537cbecb4..ad4daafcfb22981c56b96b51ee3c1ec24a034d45 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -162,6 +162,8 @@ import org.bukkit.event.weather.LightningStrikeEvent;
+ import org.bukkit.event.world.TimeSkipEvent;
+ // CraftBukkit end
+ import it.unimi.dsi.fastutil.ints.IntArrayList; // Paper
++import org.spigotmc.AsyncCatcher;
++import world.chiyogami.thread.WorldThread;
+ 
+ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+@@ -257,7 +259,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+     public final void loadChunksForMoveAsync(AABB axisalignedbb, double toX, double toZ,
+                                              java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
+-        if (Thread.currentThread() != this.thread) {
++        if (AsyncCatcher.isAsync()) {
+             this.getChunkSource().mainThreadProcessor.execute(() -> {
+                 this.loadChunksForMoveAsync(axisalignedbb, toX, toZ, onLoad);
+             });
+@@ -1118,7 +1120,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // Spigot end
+         // Paper start- timings
+         final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity);
+-        timer = isActive ? entity.getType().tickTimer.startTiming() : entity.getType().inactiveTickTimer.startTiming(); // Paper
++        timer = isActive ? entity.getType().getTickTimer(this).startTiming() : entity.getType().getInactiveTickTimer(this).startTiming(); // Paper
+         try {
+         // Paper end - timings
+         entity.setOldPosAndRot();
+@@ -1158,7 +1160,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             if (passenger instanceof Player || this.entityTickList.contains(passenger)) {
+                 // Paper - EAR 2
+                 final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(passenger);
+-                co.aikar.timings.Timing timer = isActive ? passenger.getType().passengerTickTimer.startTiming() : passenger.getType().passengerInactiveTickTimer.startTiming(); // Paper
++                co.aikar.timings.Timing timer = isActive ? passenger.getType().getPassengerTickTimer(this).startTiming() : passenger.getType().getPassengerInactiveTickTimer(this).startTiming(); // Paper
+                 try {
+                 // Paper end
+                 passenger.setOldPosAndRot();
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index e4d54fdc28b6161e74626f25299b1081e6605e98..77742b37c447d14741cdd22f0ab44fefbb12eca4 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1550,7 +1550,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+     // Paper start - optimise out extra getCubes
+     private boolean hasNewCollision(final ServerLevel world, final Entity entity, final AABB oldBox, final AABB newBox) {
+-        final List<AABB> collisions = io.papermc.paper.util.CachedLists.getTempCollisionList();
++        final List<AABB> collisions = io.papermc.paper.util.CachedLists.getTempCollisionList(world);
+         try {
+             io.papermc.paper.util.CollisionUtil.getCollisions(world, entity, newBox, collisions, false, true,
+                 true, false, null, null);
+@@ -1564,7 +1564,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+             return false;
+         } finally {
+-            io.papermc.paper.util.CachedLists.returnTempCollisionList(collisions);
++            io.papermc.paper.util.CachedLists.returnTempCollisionList(collisions, world);
+         }
+     }
+     // Paper end - optimise out extra getCubes
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 49cf3601df7b145d49b1fe9a71ba0bc60c5394b3..556ffa3eadab836a679bddf53fcdec14ea645754 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -22,6 +22,7 @@ import java.util.Set;
+ import java.util.UUID;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.function.Predicate;
++import java.util.function.Supplier;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+ import net.minecraft.BlockUtil;
+@@ -149,6 +150,7 @@ import org.bukkit.event.entity.EntityPortalEvent;
+ import org.bukkit.event.entity.EntityPoseChangeEvent;
+ import org.bukkit.event.player.PlayerTeleportEvent;
+ import org.bukkit.plugin.PluginManager;
++import world.chiyogami.thread.WorldTask;
+ // CraftBukkit end
+ 
+ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -1280,7 +1282,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+             return movement;
+         }
+ 
+-        final List<AABB> potentialCollisions = io.papermc.paper.util.CachedLists.getTempCollisionList();
++        final List<AABB> potentialCollisions = io.papermc.paper.util.CachedLists.getTempCollisionList(level);
+         try {
+             final double stepHeight = (double)this.maxUpStep;
+             final AABB collisionBox;
+@@ -1336,7 +1338,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+                 return limitedMoveVector;
+             }
+         } finally {
+-            io.papermc.paper.util.CachedLists.returnTempCollisionList(potentialCollisions);
++            io.papermc.paper.util.CachedLists.returnTempCollisionList(potentialCollisions, level);
+         }
+         // Paper end - optimise collisions
+     }
+@@ -3217,14 +3219,16 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     }
+ 
+     @Nullable
+-    public Entity teleportTo(ServerLevel worldserver, BlockPos location) {
++    public Entity teleportTo(ServerLevel serverLevel, BlockPos location) {
+         // CraftBukkit end
+         // Paper start - fix bad state entities causing dupes
+         if (!isAlive() || !valid) {
+-            LOGGER.warn("Illegal Entity Teleport " + this + " to " + worldserver + ":" + location, new Throwable());
++            LOGGER.warn("Illegal Entity Teleport " + this + " to " + serverLevel + ":" + location, new Throwable());
+             return null;
+         }
+         // Paper end
++        Supplier<Entity> teleportTask = () -> {
++        ServerLevel worldserver = serverLevel;
+         if (this.level instanceof ServerLevel && !this.isRemoved()) {
+             this.level.getProfiler().push("changeDimension");
+             // CraftBukkit start
+@@ -3299,6 +3303,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         } else {
+             return null;
+         }
++        };
++        
++        if (serverLevel == this.level) {
++            return teleportTask.get();
++        } else {
++            return this.level.worldThread.runWorldTaskThreadSafely(serverLevel.worldThread, new WorldTask<>(teleportTask), "NMS Entity teleport.");
++        }
+     }
+ 
+     protected void removeAfterChangingDimensions() {
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 79abd84696ef099f6b12ddeaa6e398f18c53316a..2ce033dd142395dcff7dc0565968d5d805cce4be 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -1,11 +1,13 @@
+ package net.minecraft.world.entity;
+ 
++import co.aikar.timings.Timing;
++import co.aikar.timings.Timings;
++import co.aikar.timings.WorldTimingsHandler;
+ import com.google.common.collect.ImmutableSet;
+ import com.mojang.logging.LogUtils;
+-import java.util.List;
+-import java.util.Optional;
+-import java.util.Spliterator;
+-import java.util.UUID;
++
++import java.util.*;
++import java.util.concurrent.ConcurrentHashMap;
+ import java.util.function.Consumer;
+ import java.util.function.Function;
+ import java.util.stream.Stream;
+@@ -324,6 +326,28 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+         this.passengerInactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerInactiveTick");
+         // Paper end
+     }
++    
++    // Chiyogami - timings
++    private final Map<String, Timing> tickMap = new ConcurrentHashMap<>();
++    private final Map<String, Timing> inactiveTickMap = new ConcurrentHashMap<>();
++    private final Map<String, Timing> passengerTickMap = new ConcurrentHashMap<>();
++    private final Map<String, Timing> passengerInactiveTickMap = new ConcurrentHashMap<>();
++    
++    public Timing getTickTimer(Level level){
++        return tickMap.computeIfAbsent(level.getWorld().getName(), k -> WorldTimingsHandler.getHandlerForWorld(k + ": " + id + " - tick"));
++    }
++    
++    public Timing getInactiveTickTimer(Level level){
++        return inactiveTickMap.computeIfAbsent(level.getWorld().getName(), k -> WorldTimingsHandler.getHandlerForWorld(k + ": " + id + " - inactiveTick"));
++    }
++    
++    public Timing getPassengerTickTimer(Level level){
++        return passengerTickMap.computeIfAbsent(level.getWorld().getName(), k -> WorldTimingsHandler.getHandlerForWorld(k + ": " + id + " - passengerTick"));
++    }
++    
++    public Timing getPassengerInactiveTickTimer(Level level){
++        return passengerInactiveTickMap.computeIfAbsent(level.getWorld().getName(), k -> WorldTimingsHandler.getHandlerForWorld(k + ": " + id + " - passengerInactiveTick"));
++    }
+ 
+     @Nullable
+     public Entity spawn(ServerLevel world, @Nullable ItemStack stack, @Nullable Player player, BlockPos pos, MobSpawnType spawnReason, boolean alignPosition, boolean invertY) {
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 160c0f37aa3aaf7598f852acf9bd444f79444c97..97baba4cefba209455d4fcacf07c153ab56c8c4f 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -99,6 +99,8 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.entity.SpawnCategory;
+ import org.bukkit.event.block.BlockPhysicsEvent;
+ import org.bukkit.event.world.GenericGameEvent;
++import org.spigotmc.AsyncCatcher;
++import world.chiyogami.thread.WorldThread;
+ // CraftBukkit end
+ 
+ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -118,7 +120,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList(); public final int getTotalTileEntityTickers() { return this.blockEntityTickers.size(); } // Paper
+     private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
+     private boolean tickingBlockEntities;
+-    public final Thread thread;
++    public Thread thread;
+     private final boolean isDebug;
+     private int skyDarken;
+     protected int randValue = (new Random()).nextInt();
+@@ -171,7 +173,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     private int tileTickPosition;
+     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+     public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
+-
++    
++    public final WorldThread worldThread = new WorldThread(this); // Chiyogami
+     // Paper start - fix and optimise world upgrading
+     // copied from below
+     public static ResourceKey<DimensionType> getDimensionKey(DimensionType manager) {
+@@ -418,7 +421,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
+         // Paper start - make sure loaded chunks get the inlined variant of this function
+         net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
+-        if (cps.mainThread == Thread.currentThread()) {
++        if (!AsyncCatcher.isAsync()) {
+             LevelChunk ifLoaded = cps.getChunkAtIfLoadedMainThread(chunkX, chunkZ);
+             if (ifLoaded != null) {
+                 return ifLoaded;
+@@ -995,7 +998,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         }
+         // Paper end
+         // CraftBukkit end
+-        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
++        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && AsyncCatcher.isAsync() ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
+     }
+ 
+     public void setBlockEntity(BlockEntity blockEntity) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index a9d94e9b444cc0b199752a1361a05bd4edaf4977..6f891755db0558ac14462c953b5eef2780e76bb1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -238,11 +238,15 @@ import org.bukkit.scheduler.BukkitWorker;
+ import org.bukkit.structure.StructureManager;
+ import org.bukkit.util.StringUtil;
+ import org.bukkit.util.permissions.DefaultPermissions;
++import org.spigotmc.AsyncCatcher;
+ import org.yaml.snakeyaml.Yaml;
+ import org.yaml.snakeyaml.constructor.SafeConstructor;
+ import org.yaml.snakeyaml.error.MarkedYAMLException;
+ 
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
++import world.chiyogami.thread.ImplConcurrentTaskHandler;
++import world.chiyogami.thread.ImplWorldThreadLockHandler;
++import world.chiyogami.thread.WorldThreadPool;
+ 
+ import javax.annotation.Nullable; // Paper
+ import javax.annotation.Nonnull; // Paper
+@@ -306,6 +310,9 @@ public final class CraftServer implements Server {
+         this.structureManager = new CraftStructureManager(console.getStructureManager());
+ 
+         Bukkit.setServer(this);
++    
++        new ImplConcurrentTaskHandler(); // Chiyogami
++        new ImplWorldThreadLockHandler(); // Chiyogami
+ 
+         // Register all the Enchantments and PotionTypes now so we can stop new registration immediately after
+         Enchantments.SHARPNESS.getClass();
+@@ -460,6 +467,7 @@ public final class CraftServer implements Server {
+     // Paper end
+ 
+     public void enablePlugins(PluginLoadOrder type) {
++        world.chiyogami.thread.WorldThreadPool.resetAllPluginWorldTasks(); // Chiyogami
+         if (type == PluginLoadOrder.STARTUP) {
+             this.helpMap.clear();
+             this.helpMap.initializeGeneralTopics();
+@@ -2159,9 +2167,19 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean isPrimaryThread() {
+-        return Thread.currentThread().equals(console.serverThread) || Thread.currentThread().equals(net.minecraft.server.MinecraftServer.getServer().shutdownThread); // Paper - Fix issues with detecting main thread properly, the only time Watchdog will be used is during a crash shutdown which is a "try our best" scenario
++        return !AsyncCatcher.isAsync() || Thread.currentThread().equals(net.minecraft.server.MinecraftServer.getServer().shutdownThread); // Paper - Fix issues with detecting main thread properly, the only time Watchdog will be used is during a crash shutdown which is a "try our best" scenario
+     }
+-
++    
++    @Override
++    public boolean isMainThread() {
++        return AsyncCatcher.isMainThread();
++    }
++    
++    @Override
++    public boolean isWorldThread() {
++        return WorldThreadPool.isWorldThread();
++    }
++    
+     // Paper start
+     @Override
+     public net.kyori.adventure.text.Component motd() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 21db68e58d053b83d8688b3fc71984ff36dda048..5f83dbd9f8244169a2028ad5090517f70f2f3f2d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -128,6 +128,9 @@ import org.bukkit.util.BoundingBox;
+ import org.bukkit.util.Consumer;
+ import org.bukkit.util.RayTraceResult;
+ import org.bukkit.util.Vector;
++import org.spigotmc.AsyncCatcher;
++import world.chiyogami.thread.WorldThread;
++import world.chiyogami.thread.WorldThreadRunnable;
+ 
+ public class CraftWorld extends CraftRegionAccessor implements World {
+     public static final int CUSTOM_DIMENSION_OFFSET = 10;
+@@ -381,7 +384,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public Chunk[] getLoadedChunks() {
+         // Paper start
+-        if (Thread.currentThread() != world.getLevel().thread) {
++        if (AsyncCatcher.isAsync()) {
+             // Paper start - change updating chunks map
+             Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks;
+             synchronized (world.getChunkSource().chunkMap.updatingChunks) {
+@@ -2281,6 +2284,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     public void setSendViewDistance(int viewDistance) {
+         getHandle().getChunkSource().chunkMap.playerChunkManager.setSendDistance(viewDistance); // Paper - replace old player chunk management
+     }
++    
++    @Override
++    public void scheduleTask(Runnable runnable, long period, long delay) {
++        if (runnable instanceof WorldThreadRunnable) {
++            WorldThread worldThread = this.getHandle().worldThread;
++            worldThread.scheduleWorldThreadRunnable((WorldThreadRunnable) runnable);
++        } else {
++            new WorldThreadRunnable() {
++                @Override
++                public void run() {
++                    runnable.run();
++                }
++            }.runTaskTimer(this, delay, period);
++        }
++    }
+     // Paper end - view distance api
+ 
+     // Spigot start
+diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
+index 0c41413ad32f8f6a094462fcd637dd3229abda45..00422ecf7e8e9d97e2c6b0a82148fb165535f2de 100644
+--- a/src/main/java/org/spigotmc/AsyncCatcher.java
++++ b/src/main/java/org/spigotmc/AsyncCatcher.java
+@@ -1,6 +1,7 @@
+ package org.spigotmc;
+ 
+ import net.minecraft.server.MinecraftServer;
++import world.chiyogami.thread.WorldThreadPool;
+ 
+ public class AsyncCatcher
+ {
+@@ -10,10 +11,16 @@ public class AsyncCatcher
+ 
+     public static void catchOp(String reason)
+     {
+-        if ( (AsyncCatcher.enabled || io.papermc.paper.util.TickThread.STRICT_THREAD_CHECKS) && Thread.currentThread() != MinecraftServer.getServer().serverThread ) // Paper
++        if ( (AsyncCatcher.enabled || io.papermc.paper.util.TickThread.STRICT_THREAD_CHECKS) && isAsync() ) // Paper
+         {
+             MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable()); // Paper
+             throw new IllegalStateException( "Asynchronous " + reason + "!" );
+         }
+     }
++    
++    public static boolean isAsync() {
++        return !WorldThreadPool.isWorldThread() && !isMainThread();
++    }
++    
++    public static boolean isMainThread() {return MinecraftServer.getServer().serverThread == Thread.currentThread();}
+ }
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index 24fefa521093448e608e217af7b88a6397a4b054..26268bcc5668cec191c0e40f792dc0c25b5a87c9 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -3,11 +3,14 @@ package org.spigotmc;
+ import java.lang.management.ManagementFactory;
+ import java.lang.management.MonitorInfo;
+ import java.lang.management.ThreadInfo;
++import java.util.Map;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ import com.destroystokyo.paper.PaperConfig;
+ import net.minecraft.server.MinecraftServer;
+ import org.bukkit.Bukkit;
++import world.chiyogami.thread.WorldThread;
++import world.chiyogami.thread.WorldThreadPool;
+ 
+ public class WatchdogThread extends Thread
+ {
+@@ -197,6 +200,13 @@ public class WatchdogThread extends Thread
+                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( server.serverThread.getId(), Integer.MAX_VALUE ), log );
+                 log.log( Level.SEVERE, "------------------------------" );
+                 //
++                // Chiyogami start - World thread dump
++                log.log( Level.SEVERE, "World Thread Dump:" );
++                for (Map.Entry<Thread, WorldThread> entry : WorldThreadPool.worldThreadHashMap.entrySet() )
++                {
++                    WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( entry.getKey().getId(), Integer.MAX_VALUE ), log , entry.getValue().getLevel().getWorld().getName() );
++                }
++                // Chiyogami end
+                 // Paper start - Only print full dump on long timeouts
+                 if ( isLongTimeout )
+                 {
+@@ -247,10 +257,13 @@ public class WatchdogThread extends Thread
+             }
+         }
+     }
++    
++    private static void dumpThread(ThreadInfo thread, Logger log) {dumpThread(thread, log, null);}
+ 
+-    private static void dumpThread(ThreadInfo thread, Logger log)
++    private static void dumpThread(ThreadInfo thread, Logger log, String world)
+     {
+         log.log( Level.SEVERE, "------------------------------" );
++        if (world != null) log.log( Level.SEVERE, "World: " + world );
+         //
+         log.log( Level.SEVERE, "Current Thread: " + thread.getThreadName() );
+         log.log( Level.SEVERE, "\tPID: " + thread.getThreadId()
+diff --git a/src/main/java/world/chiyogami/config/ChiyogamiConfig.java b/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5b905dfe18a47166aaa37b31c326fd20a0ccfd1c
+--- /dev/null
++++ b/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
+@@ -0,0 +1,116 @@
++package world.chiyogami.config;
++
++
++import org.bukkit.configuration.file.YamlConfiguration;
++import org.bukkit.plugin.SimplePluginManager;
++import world.chiyogami.log.ChiyogamiLogger;
++import world.chiyogami.thread.WorldThreadPool;
++
++import java.io.File;
++import java.util.ArrayList;
++import java.util.List;
++
++public final class ChiyogamiConfig {
++    
++    private static final int VERSION = 2;
++    
++    private static final List<ConfigComponent<?>> configComponentList = new ArrayList<>();
++    
++    private static final ConfigComponent<Integer> CONFIG_VERSION = new ConfigComponent<>("config-version", VERSION, VERSION);
++    private static final ConfigComponent<Integer> MAX_WORLD_THREADS = new ConfigComponent<>("max-world-threads", 0, 0);
++    private static final ConfigComponent<Boolean> SHOW_CHIYOGAMI_LOG = new ConfigComponent<>("show-detail-log", true, 0);
++    private static final ConfigComponent<Boolean> SYNCHRONIZED_EVENT = new ConfigComponent<>("synchronized-event", true, 1);
++    private static final ConfigComponent<Boolean> PARALLEL_WORLD_BRIDGE = new ConfigComponent<>("parallel-world-bridge", false, 2);
++    
++    
++    private static void setDefaultValues(YamlConfiguration yml){
++        int configVer = 0;
++        if(yml.contains(CONFIG_VERSION.path)) configVer = yml.getInt(CONFIG_VERSION.path);
++        
++        for(ConfigComponent<?> configComponent : configComponentList){
++            String path = configComponent.path;
++            Object defaultValue = configComponent.defaultValue;
++            int componentVer = configComponent.version;
++            
++            if(configVer < componentVer || !yml.contains(path)){
++                yml.set(path, defaultValue);
++            }
++        }
++    }
++    
++    
++    private static void loadValues(YamlConfiguration yml){
++        for(ConfigComponent<?> configComponent : configComponentList){
++            String path = configComponent.path;
++            if(yml.contains(path)){
++                try {
++                    configComponent.setValue(yml.get(path));
++                }catch (Exception e){e.printStackTrace();}
++            }
++        }
++    }
++    
++    
++    private static class ConfigComponent<T>{
++        
++        private final String path;
++        
++        private final T defaultValue;
++        
++        private final int version;
++        
++        private T value = null;
++        
++        private ConfigComponent(String path, T defaultValue, int version){
++            this.path = path;
++            this.defaultValue = defaultValue;
++            this.version = version;
++            configComponentList.add(this);
++        }
++        
++        private void setValue(Object value) {this.value = (T)value;}
++        
++        private T getValue() {
++            if(value != null) return value;
++            return defaultValue;
++        }
++    }
++    
++    
++    
++    
++    public static void load(){
++        try {
++            
++            File file = new File("chiyogami.yml");
++            
++            YamlConfiguration yml;
++            if (file.exists()) {
++                yml = YamlConfiguration.loadConfiguration(file);
++            } else {
++                yml = new YamlConfiguration();
++            }
++            setDefaultValues(yml);
++            yml.save(file);
++            
++            loadValues(yml);
++            
++            //WorkMode.MULTI_THREAD_TICK = MAX_WORLD_THREADS.getValue() != 1;
++            WorldThreadPool.setMaxPoolSize(MAX_WORLD_THREADS.getValue());
++            
++            ChiyogamiLogger.isShowLogs = SHOW_CHIYOGAMI_LOG.getValue();
++            
++            SimplePluginManager.synchronizedEvent = SYNCHRONIZED_EVENT.getValue();
++            
++            //ParallelWorldBridge.parallelWorldBridge = PARALLEL_WORLD_BRIDGE.getValue();
++            
++        }catch (Exception e){e.printStackTrace();}
++    }
++    
++    public static int getMaxWorldThreads() {return MAX_WORLD_THREADS.getValue();}
++    
++    public static boolean isShowLogs() {return SHOW_CHIYOGAMI_LOG.getValue();}
++    
++    public static boolean isSynchronizedEvent(){return SYNCHRONIZED_EVENT.getValue();}
++}
++
+diff --git a/src/main/java/world/chiyogami/log/ChiyogamiLogger.java b/src/main/java/world/chiyogami/log/ChiyogamiLogger.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..20cc1bc1cf14f1bd093b59ff6475516b82662c01
+--- /dev/null
++++ b/src/main/java/world/chiyogami/log/ChiyogamiLogger.java
+@@ -0,0 +1,17 @@
++package world.chiyogami.log;
++
++
++import net.minecraft.server.MinecraftServer;
++
++public class ChiyogamiLogger {
++    
++    public static boolean isShowLogs = true;
++    
++    public static void info(String string){
++        if(!isShowLogs) return;
++        string = "Chiyogami : INFO > " + string;
++        MinecraftServer.LOGGER.info(string);
++    }
++    
++}
++
+diff --git a/src/main/java/world/chiyogami/thread/ImplConcurrentTaskHandler.java b/src/main/java/world/chiyogami/thread/ImplConcurrentTaskHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..50d139294ef2f19a61c30ea3d5424ca53e29b4d2
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/ImplConcurrentTaskHandler.java
+@@ -0,0 +1,61 @@
++package world.chiyogami.thread;
++
++import org.bukkit.Bukkit;
++import org.bukkit.World;
++import org.bukkit.craftbukkit.CraftWorld;
++
++import java.util.concurrent.ExecutionException;
++import java.util.function.Supplier;
++
++public class ImplConcurrentTaskHandler extends ConcurrentTaskHandler {
++    
++    public ImplConcurrentTaskHandler() {super();}
++    
++    @Override
++    protected <T> T runConcurrentTaskForWorldImpl(World targetWorld, Supplier<T> supplier) {
++        // Main thread
++        if (Bukkit.isMainThread()) {
++            return supplier.get();
++        }
++        
++        WorldTask<T> worldTask = new WorldTask<>(supplier);
++        
++        WorldThread currentWorldThread = WorldThreadPool.getWorldThreadFromCurrentThread();
++        WorldThread targetWorldThread = ((CraftWorld) targetWorld).getHandle().worldThread;
++        
++        // Async thread
++        if (currentWorldThread == null) {
++            try {
++                targetWorldThread.LOCK.lock();
++                if (targetWorldThread.isProcessingWorldTick()) {
++                    targetWorldThread.addWorldTask(worldTask);
++                } else {
++                    worldTask.complete();
++                }
++            } finally {
++                targetWorldThread.LOCK.unlock();
++            }
++    
++            try {
++                return worldTask.get();
++            } catch (InterruptedException | ExecutionException e) {
++                e.printStackTrace();
++                throw new IllegalStateException("Failed to wait for world task.");
++            }
++        }
++        
++        // World thread
++        if (currentWorldThread == targetWorldThread) {
++            worldTask.complete();
++            try {
++                return worldTask.get();
++            } catch (InterruptedException | ExecutionException e) {
++                e.printStackTrace();
++                throw new IllegalStateException("Failed to wait for world task.");
++            }
++        } else {
++            return currentWorldThread.runWorldTaskThreadSafely(targetWorldThread, worldTask, "Internal error.");
++        }
++    }
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/ImplWorldThreadLockHandler.java b/src/main/java/world/chiyogami/thread/ImplWorldThreadLockHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..04860d381594afa04b10cbe85df3d697c8f9970a
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/ImplWorldThreadLockHandler.java
+@@ -0,0 +1,52 @@
++package world.chiyogami.thread;
++
++import org.bukkit.Bukkit;
++
++public class ImplWorldThreadLockHandler extends WorldThreadLockHandler {
++    
++    public ImplWorldThreadLockHandler() {super();}
++    
++    @Override
++    public void lock(WorldThreadSafeLock worldThreadSafeLock) {
++        //Main thread
++        if (Bukkit.isMainThread()) {
++            return;
++        }
++        
++        WorldThread worldThread = WorldThreadPool.getWorldThreadFromCurrentThread();
++        
++        //Async thread
++        if (worldThread == null) {
++            return;
++        }
++        
++        //World thread
++        worldThread.safeLockCount.addAndGet(1);
++    }
++    
++    @Override
++    public void unlock(WorldThreadSafeLock worldThreadSafeLock) {
++        //Main thread
++        if (Bukkit.isMainThread()) {
++            return;
++        }
++    
++        WorldThread worldThread = WorldThreadPool.getWorldThreadFromCurrentThread();
++    
++        //Async thread
++        if (worldThread == null) {
++            return;
++        }
++    
++        //World thread
++        int lockNest = worldThread.safeLockCount.addAndGet(-1);
++        
++        if (lockNest < 0) {
++            int old = worldThread.safeLockCount.getAndSet(0);
++            throw new IllegalStateException("Lock and unlock counts do not match. \n" +
++                "Excessive unlocking or an internal error may have occurred.\n" +
++                "LockCount : " + old);
++        }
++    }
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldTask.java b/src/main/java/world/chiyogami/thread/WorldTask.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6cf52fb828283fd8f948ef3821b66732c8e00365
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldTask.java
+@@ -0,0 +1,16 @@
++package world.chiyogami.thread;
++
++import java.util.concurrent.CompletableFuture;
++import java.util.function.Supplier;
++
++public class WorldTask<T> extends CompletableFuture<T> {
++
++    private final Supplier<T> task;
++    
++    public WorldTask(Supplier<T> task) {
++        this.task = task;
++    }
++    
++    public void complete(){super.complete(task.get());}
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThread.java b/src/main/java/world/chiyogami/thread/WorldThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cfdf5967946cde0ea86ce887cea73f4c3feea458
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThread.java
+@@ -0,0 +1,225 @@
++package world.chiyogami.thread;
++
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.level.Level;
++import world.chiyogami.log.ChiyogamiLogger;
++
++import java.util.*;
++import java.util.concurrent.ExecutionException;
++import java.util.concurrent.atomic.AtomicInteger;
++import java.util.concurrent.locks.ReentrantLock;
++
++public class WorldThread implements Runnable {
++    
++    public static final ReentrantLock TASK_SCHEDULING_LOCK = new ReentrantLock(true);
++    
++    
++    private final Level level;
++    
++    private Runnable worldTickRunnable;
++    
++    private final List<WorldTask<?>> worldTasks = new ArrayList<>();
++    
++    private long tick = 0;
++    
++    private WorldThread waitFor = null;
++    
++    private boolean isProcessingWorldTick = false;
++    
++    public final ReentrantLock LOCK = new ReentrantLock(true);
++    
++    private Thread currentThread = Thread.currentThread();
++    
++    private final List<WorldThreadRunnable> scheduledRunnableList = new ArrayList<>();
++    
++    private final Map<WorldThreadRunnable, Long> scheduledDelayRunnableListMap = new HashMap<>();
++    
++    private final Map<WorldThreadRunnable, Long> scheduledTimerRunnableListMap = new HashMap<>();
++    
++    private final ReentrantLock SCHEDULER_LOCK = new ReentrantLock(true);
++    
++    public AtomicInteger safeLockCount = new AtomicInteger();
++    
++    public WorldThread(Level level) {
++        this.level = level;
++    }
++    
++    public Level getLevel() {return level;}
++    
++    public Runnable getWorldTickRunnable() {return worldTickRunnable;}
++    
++    public void setWorldTickRunnable(Runnable worldTickRunnable) {this.worldTickRunnable = worldTickRunnable;}
++    
++    public boolean isProcessingWorldTick() {return isProcessingWorldTick;}
++    
++    public Thread getCurrentThread() {return currentThread;}
++    
++    public void setCurrentThread(Thread currentThread) {this.currentThread = currentThread;}
++    
++    public void addWorldTask(WorldTask<?> worldTask) {worldTasks.add(worldTask);}
++    
++    public void resetAllPluginWorldTasks() {
++        scheduledRunnableList.clear();
++        scheduledDelayRunnableListMap.clear();
++        scheduledTimerRunnableListMap.clear();
++    }
++    
++    public void scheduleWorldThreadRunnable(WorldThreadRunnable runnable) {
++        try {
++            SCHEDULER_LOCK.lock();
++            if (runnable.getDelay() == 0) {
++                if (runnable.getPeriod() == 0) {
++                    scheduledRunnableList.add(runnable);
++                } else {
++                    scheduledTimerRunnableListMap.put(runnable, tick);
++                }
++            } else {
++                scheduledDelayRunnableListMap.put(runnable, runnable.getDelay() + tick);
++            }
++        } finally {
++            SCHEDULER_LOCK.unlock();
++        }
++    }
++    
++    
++    @Override
++    public void run() {
++        tick++;
++        
++        currentThread = Thread.currentThread();
++        WorldThreadPool.addCurrentThreadToWorldThreadHashMap(this);
++        
++        try {
++            LOCK.lock();
++            isProcessingWorldTick = true;
++        } finally {
++            LOCK.unlock();
++        }
++        
++        //Scheduler
++        try {
++            SCHEDULER_LOCK.lock();
++            for (Map.Entry<WorldThreadRunnable, Long> entry : scheduledDelayRunnableListMap.entrySet()) {
++                WorldThreadRunnable runnable = entry.getKey();
++                long tick = entry.getValue();
++                
++                if (this.tick == tick && !runnable.isCanceled()) {
++                    if (runnable.getPeriod() == 0) {
++                        scheduledRunnableList.add(runnable);
++                    } else {
++                        scheduledTimerRunnableListMap.put(runnable, tick);
++                    }
++                }
++            }
++            
++            for (WorldThreadRunnable runnable : scheduledRunnableList) {
++                try {
++                    runnable.run();
++                } catch (Exception e) {
++                    e.printStackTrace();
++                }
++            }
++            
++            for (Map.Entry<WorldThreadRunnable, Long> entry : scheduledTimerRunnableListMap.entrySet()) {
++                WorldThreadRunnable runnable = entry.getKey();
++                long tick = entry.getValue();
++                
++                if ((this.tick - tick) % runnable.getPeriod() == 0) {
++                    try {
++                        runnable.run();
++                    } catch (Exception e) {
++                        e.printStackTrace();
++                    }
++                }
++            }
++            
++            scheduledDelayRunnableListMap.keySet().removeIf(WorldThreadRunnable::isCanceled);
++            scheduledTimerRunnableListMap.keySet().removeIf(WorldThreadRunnable::isCanceled);
++            scheduledRunnableList.clear();
++        } finally {
++            SCHEDULER_LOCK.unlock();
++        }
++        
++        worldTickRunnable.run();
++    
++        try {
++            LOCK.lock();
++            isProcessingWorldTick = false;
++            
++            if (worldTasks.size() == 0) return;
++            
++            for (WorldTask<?> worldTask : worldTasks) {
++                worldTask.complete();
++            }
++            worldTasks.clear();
++        } finally {
++            LOCK.unlock();
++        }
++    }
++    
++    public WorldThread getWaitFor() {return waitFor;}
++    
++    public void catchIllegalThread(String reason){
++        Thread currentThread = Thread.currentThread();
++        
++        if(currentThread == MinecraftServer.getServer().serverThread) return;
++        if(currentThread == this.currentThread) return;
++        
++        throw new IllegalStateException("Chiyogami > Unauthorized concurrent execution to worlds."
++            + System.lineSeparator() + "             World : " + level.getWorld().getName() + "  Reason : " + reason
++            + System.lineSeparator() + "This operation is unacceptable because it can cause serious damage to this server."
++            + System.lineSeparator() + "It has been rejected by Chiyogami, it is not a bug.");
++    }
++    
++    public <T> T runWorldTaskThreadSafely(WorldThread targetWorldThread, WorldTask<T> worldTask, String reason) {
++        this.catchIllegalThread(reason);
++        if (targetWorldThread == null) {
++            throw new IllegalStateException("Failed to wait for world task.");
++        }
++        
++        ChiyogamiLogger.info("Try wait " + level.getWorld().getName() + " -> " + targetWorldThread.level.getWorld().getName());
++        
++        try {
++            TASK_SCHEDULING_LOCK.lock();
++            targetWorldThread.LOCK.lock();
++            
++            //Checks to see if threads waiting to exit are not recursively waiting for themselves.
++            WorldThread waitForThread = targetWorldThread;
++            do {
++                waitForThread = waitForThread.waitFor;
++            } while (waitForThread != null && waitForThread != this);
++    
++            if (waitForThread == null) {
++                if (targetWorldThread.isProcessingWorldTick) {
++                    if (this.safeLockCount.get() != 0) {
++                        throw new IllegalStateException("""
++                            The current thread has already acquired a lock with WorldThreadSafeLock.
++                            In this state, it cannot safely wait for another world's task completion.
++                            This operation cannot be performed because it may cause a deadlock.""");
++                    }
++                    
++                    ChiyogamiLogger.info("Wait for " + level.getWorld().getName() + " -> " + targetWorldThread.level.getWorld().getName());
++                    targetWorldThread.worldTasks.add(worldTask);
++                    this.waitFor = targetWorldThread;
++                } else {
++                    worldTask.complete();
++                }
++            } else {
++                worldTask.complete();
++            }
++        } finally {
++            targetWorldThread.LOCK.unlock();
++            TASK_SCHEDULING_LOCK.unlock();
++        }
++    
++        try {
++            T result = worldTask.get();
++            this.waitFor = null;
++            return result;
++        } catch (InterruptedException | ExecutionException e) {
++            e.printStackTrace();
++            throw new IllegalStateException("Failed to wait for world task.");
++        }
++    }
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThreadPool.java b/src/main/java/world/chiyogami/thread/WorldThreadPool.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a7e600159ad42307f06bb87be1d4de4b226a6278
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThreadPool.java
+@@ -0,0 +1,73 @@
++package world.chiyogami.thread;
++
++import net.minecraft.server.level.ServerLevel;
++
++import java.util.*;
++import java.util.concurrent.*;
++import java.util.concurrent.locks.ReentrantLock;
++
++public class WorldThreadPool {
++    
++    private static ExecutorService executorService = null;
++    
++    private static int maxPoolSize = 0;
++    
++    private static int previousPoolSize = 0;
++    
++    public static void setMaxPoolSize(int poolSize) {WorldThreadPool.maxPoolSize = poolSize;}
++    
++    public static Map<Thread, WorldThread> worldThreadHashMap = new HashMap<>();
++    
++    private static final ReentrantLock WORLD_THREAD_HASH_MAP_LOCK = new ReentrantLock(true);
++    
++    public static void addCurrentThreadToWorldThreadHashMap(WorldThread worldThread) {
++        //Copy on write
++        try {
++            WORLD_THREAD_HASH_MAP_LOCK.lock();
++            Thread currentThread = Thread.currentThread();
++            Map<Thread, WorldThread> copy = new HashMap<>(worldThreadHashMap);
++            copy.put(currentThread, worldThread);
++            worldThreadHashMap = copy;
++        } finally {
++            WORLD_THREAD_HASH_MAP_LOCK.unlock();
++        }
++    }
++    
++    public static boolean isWorldThread() {
++        return worldThreadHashMap.containsKey(Thread.currentThread());
++    }
++    
++    public static WorldThread getWorldThreadFromCurrentThread() {return worldThreadHashMap.get(Thread.currentThread());}
++    
++    public static void resetAllPluginWorldTasks() {
++        worldThreadHashMap.values().forEach(WorldThread::resetAllPluginWorldTasks);
++    }
++    
++    
++    public static void shutdown(){if(executorService != null) executorService.shutdown();}
++    
++    public static void doTick(Collection<ServerLevel> serverLevels){
++        int pool = maxPoolSize > 0 ? maxPoolSize : serverLevels.size();
++        
++        if(pool != previousPoolSize){
++            if(executorService != null) executorService.shutdown();
++            executorService = Executors.newFixedThreadPool(pool);
++            previousPoolSize = pool;
++            worldThreadHashMap.clear();
++        }
++        
++        Set<Future<?>> futures = new HashSet<>();
++        for (ServerLevel serverLevel : serverLevels) {
++            Future<?> future = executorService.submit(serverLevel.worldThread);
++            futures.add(future);
++        }
++        
++        for(Future<?> future : futures){
++            try {
++                future.get();
++            } catch (Exception e){e.printStackTrace();}
++        }
++    }
++    
++}
++
