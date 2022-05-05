@@ -1,3 +1,6 @@
+### This version is not supported!
+
+
 ![chiyogami](https://user-images.githubusercontent.com/34712108/135766838-98102b74-0990-4408-af3d-d576edb0b8fb.png)
 
 Chiyogami-Serverは [Tuinity](https://github.com/Tuinity/Tuinity) をフォークしたものであり、Spigotプラグインを動作させつつマルチスレッド実行を可能とするMinecraftサーバーソフトです。
