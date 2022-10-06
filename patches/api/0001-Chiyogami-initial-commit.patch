@@ -1,0 +1,795 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Be4rJP <bea0224@outlook.jp>
+Date: Fri, 7 Oct 2022 01:18:01 +0900
+Subject: [PATCH] Chiyogami initial commit.
+
+
+diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
+index 199789d56d22fcb1b77ebd56805cc28aa5a5ab0a..ce9bbcf9c32973a0bb646c41ee3b78c2becdc5a6 100644
+--- a/src/main/java/co/aikar/timings/TimingHandler.java
++++ b/src/main/java/co/aikar/timings/TimingHandler.java
+@@ -28,92 +28,161 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+ 
+ import java.util.ArrayDeque;
+ import java.util.Deque;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentLinkedDeque;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ 
+ import org.bukkit.Bukkit;
++import org.bukkit.World;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+-class TimingHandler implements Timing {
+-
+-    private static AtomicInteger idPool = new AtomicInteger(1);
+-    private static Deque<TimingHandler> TIMING_STACK = new ArrayDeque<>();
++public class TimingHandler implements Timing {
++    
++    protected static AtomicInteger idPool = new AtomicInteger(1);
++    protected static Deque<TimingHandler> MAIN_THREAD_TIMING_STACK = new ArrayDeque<>();
++    protected static Map<Thread, Deque<TimingHandler>> WORLD_THREAD_TIMING_STACK = new ConcurrentHashMap<>();
++    protected static TimingHandler WORLD_PARENT_TIMING = null;
+     final int id = idPool.getAndIncrement();
+-
++    
+     final TimingIdentifier identifier;
+-    private final boolean verbose;
+-
+-    private final Int2ObjectOpenHashMap<TimingData> children = new LoadingIntMap<>(TimingData::new);
+-
++    protected final boolean verbose;
++    
++    protected final Map<Integer, TimingData> children = new ConcurrentHashMap<>();
++    
+     final TimingData record;
+-    private TimingHandler startParent;
+-    private final TimingHandler groupHandler;
+-
+-    private long start = 0;
+-    private int timingDepth = 0;
+-    private boolean added;
+-    private boolean timed;
+-    private boolean enabled;
+-
++    protected TimingHandler startParent;
++    protected final TimingHandler groupHandler;
++    
++    protected long start = 0;
++    protected int timingDepth = 0;
++    protected boolean added;
++    protected boolean timed;
++    protected boolean enabled;
++    
+     TimingHandler(@NotNull TimingIdentifier id) {
+         this.identifier = id;
+         this.verbose = id.name.startsWith("##");
+         this.record = new TimingData(this.id);
+         this.groupHandler = id.groupHandler;
+-
++        
+         TimingIdentifier.getGroup(id.group).handlers.add(this);
+         checkEnabled();
+     }
+-
++    
++    public static class WorldTiming extends TimingHandler{
++        
++        WorldTiming(@NotNull TimingIdentifier id) {
++            super(id);
++        }
++        
++        
++        @Override
++        @NotNull
++        public Timing startTiming() {
++            return startTiming(false);
++        }
++        
++        
++        @NotNull
++        public Timing startTiming(boolean parent) {
++            if (!enabled || !Bukkit.isPrimaryThread()) {
++                return this;
++            }
++            
++            if(!Bukkit.isWorldThread()) return this;
++            
++            Deque<TimingHandler> timingHandlers = WORLD_THREAD_TIMING_STACK.computeIfAbsent(Thread.currentThread(), k -> new ArrayDeque<>());
++            if (++timingDepth == 1) {
++                startParent = timingHandlers.peekLast();
++                if(parent){
++                    startParent = WORLD_PARENT_TIMING;
++                }
++                start = System.nanoTime();
++            }
++            timingHandlers.addLast(this);
++            
++            return this;
++        }
++        
++        @Override
++        public void stopTiming() {
++            if (!enabled || timingDepth <= 0 || start == 0 || !Bukkit.isPrimaryThread()) {
++                return;
++            }
++            
++            if(!Bukkit.isWorldThread()) return;
++            
++            popTimingStack();
++            if (--timingDepth == 0) {
++                addDiff(System.nanoTime() - start, startParent);
++                startParent = null;
++                start = 0;
++            }
++        }
++    }
++    
++    
++    
++    
++    
++    
+     final void checkEnabled() {
+         enabled = Timings.timingsEnabled && (!verbose || Timings.verboseEnabled);
+     }
+-
++    
+     void processTick(boolean violated) {
+         if (timingDepth != 0 || record.getCurTickCount() == 0) {
+             timingDepth = 0;
+             start = 0;
+             return;
+         }
+-
++        
+         record.processTick(violated);
+         for (TimingData handler : children.values()) {
+             handler.processTick(violated);
+         }
+     }
+-
++    
+     @NotNull
+     @Override
+     public Timing startTimingIfSync() {
+         startTiming();
+         return this;
+     }
+-
++    
+     @Override
+     public void stopTimingIfSync() {
+         stopTiming();
+     }
+-
++    
+     @NotNull
+     public Timing startTiming() {
+         if (!enabled || !Bukkit.isPrimaryThread()) {
+             return this;
+         }
+-        if (++timingDepth == 1) {
+-            startParent = TIMING_STACK.peekLast();
+-            start = System.nanoTime();
++        
++        if(!Bukkit.isWorldThread()){
++            if (++timingDepth == 1) {
++                startParent = MAIN_THREAD_TIMING_STACK.peekLast();
++                start = System.nanoTime();
++            }
++            MAIN_THREAD_TIMING_STACK.addLast(this);
+         }
+-        TIMING_STACK.addLast(this);
++        
+         return this;
+     }
+-
++    
+     public void stopTiming() {
+         if (!enabled || timingDepth <= 0 || start == 0 || !Bukkit.isPrimaryThread()) {
+             return;
+         }
+-
++        
++        if(Bukkit.isWorldThread()) return;
++        
+         popTimingStack();
+         if (--timingDepth == 0) {
+             addDiff(System.nanoTime() - start, startParent);
+@@ -121,36 +190,65 @@ class TimingHandler implements Timing {
+             start = 0;
+         }
+     }
+-
+-    private void popTimingStack() {
++    
++    public static synchronized void initializeWorldTiming(){
++        WORLD_PARENT_TIMING = MAIN_THREAD_TIMING_STACK.peekLast();
++    }
++    
++    public static void clearWorldTimings(){
++        WORLD_THREAD_TIMING_STACK.clear();
++        WORLD_PARENT_TIMING = null;
++    }
++    
++    protected void popTimingStack() {
+         TimingHandler last;
+-        while ((last = TIMING_STACK.removeLast()) != this) {
+-            last.timingDepth = 0;
+-            if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
+-                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Look above this for any errors and report this to Paper unless it has a plugin in the stack trace (" + last.identifier + " did not stopTiming)");
+-            } else {
+-                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to the plugin " + last.identifier.group + " (Look for errors above this in the logs) (" + last.identifier + " did not stopTiming)", new Throwable());
++        
++        if(!Bukkit.isWorldThread()) {
++            while ((last = MAIN_THREAD_TIMING_STACK.removeLast()) != this) {
++                last.timingDepth = 0;
++                if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
++                    Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Look above this for any errors and report this to Paper unless it has a plugin in the stack trace (" + last.identifier + " did not stopTiming)");
++                } else {
++                    Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to the plugin " + last.identifier.group + " (Look for errors above this in the logs) (" + last.identifier + " did not stopTiming)", new Throwable());
++                }
++                
++                boolean found = MAIN_THREAD_TIMING_STACK.contains(this);
++                if (!found) {
++                    // We aren't even in the stack... Don't pop everything
++                    MAIN_THREAD_TIMING_STACK.addLast(last);
++                    break;
++                }
+             }
+-
+-            boolean found = TIMING_STACK.contains(this);
+-            if (!found) {
+-                // We aren't even in the stack... Don't pop everything
+-                TIMING_STACK.addLast(last);
+-                break;
++        } else {
++            Deque<TimingHandler> timingHandlers = WORLD_THREAD_TIMING_STACK.computeIfAbsent(Thread.currentThread(), k -> new ArrayDeque<>());
++            while ((last = timingHandlers.removeLast()) != this) {
++                last.timingDepth = 0;
++                if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
++                    Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Look above this for any errors and report this to Paper unless it has a plugin in the stack trace (" + last.identifier + " did not stopTiming)");
++                } else {
++                    Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to the plugin " + last.identifier.group + " (Look for errors above this in the logs) (" + last.identifier + " did not stopTiming)", new Throwable());
++                }
++                
++                boolean found = timingHandlers.contains(this);
++                if (!found) {
++                    // We aren't even in the stack... Don't pop everything
++                    timingHandlers.addLast(last);
++                    break;
++                }
+             }
+         }
+     }
+-
++    
+     @Override
+     public final void abort() {
+-
++    
+     }
+-
++    
+     void addDiff(long diff, @Nullable TimingHandler parent) {
+         if (parent != null) {
+-            parent.children.get(id).add(diff);
++            parent.children.computeIfAbsent(id, TimingData::new).add(diff);
+         }
+-
++        
+         record.add(diff);
+         if (!added) {
+             added = true;
+@@ -159,10 +257,10 @@ class TimingHandler implements Timing {
+         }
+         if (groupHandler != null) {
+             groupHandler.addDiff(diff, parent);
+-            groupHandler.children.get(id).add(diff);
++            groupHandler.children.computeIfAbsent(id, TimingData::new).add(diff);
+         }
+     }
+-
++    
+     /**
+      * Reset this timer, setting all values to zero.
+      */
+@@ -177,23 +275,23 @@ class TimingHandler implements Timing {
+         children.clear();
+         checkEnabled();
+     }
+-
++    
+     @NotNull
+     @Override
+     public TimingHandler getTimingHandler() {
+         return this;
+     }
+-
++    
+     @Override
+     public boolean equals(Object o) {
+         return (this == o);
+     }
+-
++    
+     @Override
+     public int hashCode() {
+         return id;
+     }
+-
++    
+     /**
+      * This is simply for the Closeable interface so it can be used with try-with-resources ()
+      */
+@@ -201,19 +299,19 @@ class TimingHandler implements Timing {
+     public void close() {
+         stopTimingIfSync();
+     }
+-
++    
+     public boolean isSpecial() {
+         return this == TimingsManager.FULL_SERVER_TICK || this == TimingsManager.TIMINGS_TICK;
+     }
+-
++    
+     boolean isTimed() {
+         return timed;
+     }
+-
++    
+     public boolean isEnabled() {
+         return enabled;
+     }
+-
++    
+     @NotNull
+     TimingData[] cloneChildren() {
+         final TimingData[] clonedChildren = new TimingData[children.size()];
+diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
+index dd72a34eaa4bedd9ea0b92eaa79091b00eb4dd09..02af91849d49414d284ec626b1719809d92ba177 100644
+--- a/src/main/java/co/aikar/timings/Timings.java
++++ b/src/main/java/co/aikar/timings/Timings.java
+@@ -292,4 +292,28 @@ public final class Timings {
+     static TimingHandler ofSafe(@Nullable String groupName, @NotNull String name, @Nullable Timing groupHandler) {
+         return TimingsManager.getHandler(groupName, name, groupHandler);
+     }
++    
++    @NotNull
++    static TimingHandler ofSafeForWorld(@NotNull String name) {
++        return ofSafeForWorld(null, name, null);
++    }
++    
++    @NotNull
++    static Timing ofSafeForWorld(@Nullable Plugin plugin, @NotNull String name) {
++        Timing pluginHandler = null;
++        if (plugin != null) {
++            pluginHandler = ofSafeForWorld(plugin.getName(), "Combined Total", TimingsManager.PLUGIN_GROUP_HANDLER);
++        }
++        return ofSafeForWorld(plugin != null ? plugin.getName() : "Minecraft - Invalid Plugin", name, pluginHandler);
++    }
++    
++    @NotNull
++    static TimingHandler ofSafeForWorld(@NotNull String name, @Nullable Timing groupHandler) {
++        return ofSafeForWorld(null, name, groupHandler);
++    }
++    
++    @NotNull
++    static TimingHandler ofSafeForWorld(@Nullable String groupName, @NotNull String name, @Nullable Timing groupHandler) {
++        return TimingsManager.getHandlerForWorld(groupName, name, groupHandler);
++    }
+ }
+diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
+index a92925d41110226f7fda055b71ce7be60eedd038..b2c9f0df92b4fdadff4cf2c63f9aa0f032a86c96 100644
+--- a/src/main/java/co/aikar/timings/TimingsManager.java
++++ b/src/main/java/co/aikar/timings/TimingsManager.java
+@@ -40,9 +40,7 @@ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+ public final class TimingsManager {
+-    static final Map<TimingIdentifier, TimingHandler> TIMING_MAP = LoadingMap.of(
+-        new ConcurrentHashMap<>(4096, .5F), TimingHandler::new
+-    );
++    static final Map<TimingIdentifier, TimingHandler> TIMING_MAP = new ConcurrentHashMap<>(4096, .5F);
+     public static final FullServerTickHandler FULL_SERVER_TICK = new FullServerTickHandler();
+     public static final TimingHandler TIMINGS_TICK = Timings.ofSafe("Timings Tick", FULL_SERVER_TICK);
+     public static final Timing PLUGIN_GROUP_HANDLER = Timings.ofSafe("Plugins");
+@@ -129,10 +127,15 @@ public final class TimingsManager {
+         TimingHistory.resetTicks(true);
+         historyStart = System.currentTimeMillis();
+     }
+-
++    
+     @NotNull
+     static TimingHandler getHandler(@Nullable String group, @NotNull String name, @Nullable Timing parent) {
+-        return TIMING_MAP.get(new TimingIdentifier(group, name, parent));
++        return TIMING_MAP.computeIfAbsent(new TimingIdentifier(group, name, parent), TimingHandler::new);
++    }
++    
++    @NotNull
++    static TimingHandler getHandlerForWorld(@Nullable String group, @NotNull String name, @Nullable Timing parent) {
++        return TIMING_MAP.computeIfAbsent(new TimingIdentifier(group, name, parent), TimingHandler.WorldTiming::new);
+     }
+ 
+ 
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 232c08c9a588d957d90f198ce479e57615c6e650..83ca6af0d92b7c7086a3d5c88c49b00fe5fb5fa6 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1764,7 +1764,29 @@ public final class Bukkit {
+     public static boolean isPrimaryThread() {
+         return server.isPrimaryThread();
+     }
+-
++    
++    /**
++     * Checks if the current thread is the main thread.
++     * <p>
++     * If the current thread is a world thread, it is treated as not being the main thread.
++     *
++     * @return true if the current thread is the main thread,
++     *     false otherwise
++     */
++    public static boolean isMainThread(){
++        return server.isMainThread();
++    }
++    
++    /**
++     * Checks if the current thread is a world thread.
++     *
++     * @return true if the current thread is a world thread,
++     *     false otherwise
++     */
++    public static boolean isWorldThread(){
++        return server.isWorldThread();
++    }
++    
+     // Paper start
+     /**
+      * Gets the message that is displayed on the server list.
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index e43fef0152468944d8a33036344a43e95fe58476..dc80ae0667c05ab36d959eb4e6b2b6c7daaacf66 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1486,7 +1486,25 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *     false otherwise
+      */
+     boolean isPrimaryThread();
+-
++    // Chiyogami start
++    /**
++     * Checks if the current thread is the main thread.
++     * <p>
++     * If the current thread is a world thread, it is treated as not being the main thread.
++     *
++     * @return true if the current thread is the main thread,
++     *     false otherwise
++     */
++    boolean isMainThread();
++    
++    /**
++     * Checks if the current thread is a world thread.
++     *
++     * @return true if the current thread is a world thread,
++     *     false otherwise
++     */
++    boolean isWorldThread();
++    // Chiyogami end
+     // Paper start
+     /**
+      * Gets the message that is displayed on the server list.
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 9e71e519cda72a1e2a01474f238b97015ec5115e..ec1373b1d3bb5947ff574f2d4129cfd9f7eeebe8 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -3919,6 +3919,29 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      */
+     void setSendViewDistance(int viewDistance);
+     // Paper end - view distance api
++    /**
++     * Schedules a task to the thread executing this world.
++     *
++     * @param runnable Tasks in runnable.
++     */
++    default void scheduleTask(Runnable runnable){scheduleTask(runnable, 0, 0);}
++    
++    /**
++     * Schedules a task to the thread executing this world.
++     *
++     * @param runnable Tasks in runnable.
++     * @param delay Delay in executing a task.
++     */
++    default void scheduleTask(Runnable runnable, long delay){scheduleTask(runnable, 0, delay);}
++    
++    /**
++     * Schedules a task to the thread executing this world.
++     *
++     * @param runnable Tasks in runnable.
++     * @param delay Delay in executing a task.
++     * @param period The interval at which the task is to be executed.
++     */
++    void scheduleTask(Runnable runnable, long delay, long period);
+ 
+     // Spigot start
+     public class Spigot {
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 9db611841b73fed8dc8a71f4d7fdef95af3cf89d..d79dca4f90e1ac438a42c3bd743583fbbfd83c23 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -21,6 +21,7 @@ import java.util.List;
+ import java.util.Map;
+ import java.util.Set;
+ import java.util.WeakHashMap;
++import java.util.concurrent.locks.ReentrantLock;
+ import java.util.logging.Level;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+@@ -39,6 +40,7 @@ import org.bukkit.permissions.PermissionDefault;
+ import org.bukkit.util.FileUtil;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++import world.chiyogami.thread.WorldThreadSafeLock;
+ 
+ /**
+  * Handles all plugin management from the Server
+@@ -56,6 +58,9 @@ public final class SimplePluginManager implements PluginManager {
+     private final Map<String, Map<Permissible, Boolean>> permSubs = new HashMap<String, Map<Permissible, Boolean>>();
+     private final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
+     private boolean useTimings = false;
++    
++    private final ReentrantLock EVENT_LOCK = new WorldThreadSafeLock(true); // Chiyogami
++    public static boolean synchronizedEvent = true; // Chiyogami
+ 
+     public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
+         server = instance;
+@@ -657,29 +662,47 @@ public final class SimplePluginManager implements PluginManager {
+         } else if (!event.isAsynchronous() && !server.isPrimaryThread() && !server.isStopping() ) {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+         }
+-
++    
++        if(synchronizedEvent) {
++            boolean isSync = !event.isAsynchronous();
++            if (isSync) {
++                EVENT_LOCK.lock();
++                try {
++                    runEvent(event);
++                } finally {
++                    EVENT_LOCK.unlock();
++                }
++            } else {
++                runEvent(event);
++            }
++        }else{
++            runEvent(event);
++        }
++    }
++    
++    private void runEvent(Event event) {
+         HandlerList handlers = event.getHandlers();
+         RegisteredListener[] listeners = handlers.getRegisteredListeners();
+-
++    
+         for (RegisteredListener registration : listeners) {
+             if (!registration.getPlugin().isEnabled()) {
+                 continue;
+             }
+-
++        
+             try {
+                 registration.callEvent(event);
+             } catch (AuthorNagException ex) {
+                 Plugin plugin = registration.getPlugin();
+-
++            
+                 if (plugin.isNaggable()) {
+                     plugin.setNaggable(false);
+-
++                
+                     server.getLogger().log(Level.SEVERE, String.format(
+-                            "Nag author(s): '%s' of '%s' about the following: %s",
+-                            plugin.getDescription().getAuthors(),
+-                            plugin.getDescription().getFullName(),
+-                            ex.getMessage()
+-                            ));
++                        "Nag author(s): '%s' of '%s' about the following: %s",
++                        plugin.getDescription().getAuthors(),
++                        plugin.getDescription().getFullName(),
++                        ex.getMessage()
++                    ));
+                 }
+             } catch (Throwable ex) {
+                 // Paper start - error reporting
+diff --git a/src/main/java/world/chiyogami/thread/ConcurrentTaskHandler.java b/src/main/java/world/chiyogami/thread/ConcurrentTaskHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb918bd7e4f689f85abd4b8d30f49f71a95ed0ad
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/ConcurrentTaskHandler.java
+@@ -0,0 +1,52 @@
++package world.chiyogami.thread;
++
++import org.bukkit.World;
++import java.util.function.Supplier;
++
++/**
++ * Task utility class for safe operation on worlds from other threads.
++ */
++public abstract class ConcurrentTaskHandler {
++    
++    protected static ConcurrentTaskHandler INSTANCE = null;
++    
++    /**
++     * Performs tasks to the target world in a thread-safe and non-delayed manner.
++     * <p>
++     * When accessing from a thread other than the main thread. Typically, a latency of 50 ms or less is incurred.
++     * <p>
++     * <b>This method only guarantees thread-safety for operations on worlds,
++     * not for global variables or methods (e.g. Bukkit.createInventory();).</b>
++     *
++     * @param targetWorld The world in which the task is to be performed.
++     * @param task Supplier task.
++     * @return Result of supplier.
++     */
++    public static <T> T runConcurrentTaskForWorld(World targetWorld, Supplier<T> task) {
++        return INSTANCE.runConcurrentTaskForWorldImpl(targetWorld, task);
++    }
++    
++    /**
++     * Performs tasks to the target world in a thread-safe and non-delayed manner.
++     * <p>
++     * When accessing from a thread other than the main thread. Typically, a latency of 50 ms or less is incurred.
++     * <p>
++     * <b>This method only guarantees thread-safety for operations on worlds,
++     * not for global variables or methods (e.g. Bukkit.createInventory();).</b>
++     *
++     * @param targetWorld The world in which the task is to be performed.
++     * @param runnable Runnable task.
++     */
++    public static void runConcurrentTaskForWorld(World targetWorld, Runnable runnable) {
++        INSTANCE.runConcurrentTaskForWorldImpl(targetWorld, () -> {
++            runnable.run();
++            return null;
++        });
++    }
++    
++    
++    protected ConcurrentTaskHandler(){INSTANCE = this;}
++    
++    protected abstract <T> T runConcurrentTaskForWorldImpl(World targetWorld, Supplier<T> supplier);
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThreadLockHandler.java b/src/main/java/world/chiyogami/thread/WorldThreadLockHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b3c5d30fe0fe3457cb8c533906373a66e00a7508
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThreadLockHandler.java
+@@ -0,0 +1,14 @@
++package world.chiyogami.thread;
++
++abstract class WorldThreadLockHandler {
++    
++    public static WorldThreadLockHandler INSTANCE;
++    
++    
++    protected WorldThreadLockHandler() {INSTANCE = this;}
++    
++    public abstract void lock(WorldThreadSafeLock worldThreadSafeLock);
++    
++    public abstract void unlock(WorldThreadSafeLock worldThreadSafeLock);
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThreadRunnable.java b/src/main/java/world/chiyogami/thread/WorldThreadRunnable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1694e1e7cb34b47a7165910672d04054a310b9ab
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThreadRunnable.java
+@@ -0,0 +1,53 @@
++package world.chiyogami.thread;
++
++import org.bukkit.World;
++import org.jetbrains.annotations.NotNull;
++
++public abstract class WorldThreadRunnable implements Runnable {
++    
++    private World world = null;
++    
++    private long period = 0;
++    
++    private long delay = 0;
++    
++    private boolean canceled = false;
++    
++    private boolean scheduled = false;
++    
++    public World getWorld() {return world;}
++    
++    public long getPeriod() {return period;}
++    
++    public long getDelay() {return delay;}
++    
++    public synchronized boolean isCanceled() {return canceled;}
++    
++    public synchronized void cancel() {this.canceled = true;}
++    
++    public synchronized void runTask(@NotNull World world) {
++        checkScheduled();
++        this.world = world;
++        scheduled = true;
++        world.scheduleTask(this);
++    }
++    
++    public synchronized void runTaskLater(@NotNull World world, long delay) {
++        checkScheduled();
++        this.world = world;
++        this.delay = delay;
++        scheduled = true;
++        world.scheduleTask(this, delay);
++    }
++    
++    public synchronized void runTaskTimer(@NotNull World world, long delay, long period) {
++        checkScheduled();
++        this.world = world;
++        this.delay = delay;
++        this.period = period;
++        scheduled = true;
++        world.scheduleTask(this, delay, period);
++    }
++    
++    private void checkScheduled() {if (scheduled) throw new IllegalStateException("This task is already scheduled.");}
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThreadSafeLock.java b/src/main/java/world/chiyogami/thread/WorldThreadSafeLock.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f6874f7bc6ac933453230307176eaafb6ff67fd0
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThreadSafeLock.java
+@@ -0,0 +1,45 @@
++package world.chiyogami.thread;
++
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.locks.ReentrantLock;
++
++/**
++ * ReentrantLock for acquiring locks while avoiding deadlocks in the world thread.
++ */
++public class WorldThreadSafeLock extends ReentrantLock {
++    
++    public WorldThreadSafeLock(boolean fair) {
++        super(fair);
++    }
++    
++    @Override
++    public void lock() {
++        WorldThreadLockHandler.INSTANCE.lock(this);
++        super.lock();
++    }
++    
++    @Override
++    public void unlock() {
++        super.unlock();
++        WorldThreadLockHandler.INSTANCE.unlock(this);
++    }
++    
++    @Override
++    public boolean tryLock() {
++        boolean already = super.tryLock();
++        if (already) {
++            WorldThreadLockHandler.INSTANCE.lock(this);
++        }
++        return already;
++    }
++    
++    @Override
++    public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
++        boolean already = super.tryLock(timeout, unit);
++        if (already) {
++            WorldThreadLockHandler.INSTANCE.lock(this);
++        }
++        return already;
++    }
++    
++}
