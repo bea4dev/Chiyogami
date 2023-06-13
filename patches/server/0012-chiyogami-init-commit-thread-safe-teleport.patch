@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 13 Jun 2023 21:35:04 +0900
+Subject: [PATCH] chiyogami-init-commit-thread-safe-teleport
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index dd80b900f707e81182825a8cefbbdde7b61785fc..4e0be501d9f4bc244b0222df42b210b7dc377d37 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -22,6 +22,7 @@ import java.util.UUID;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.function.BiConsumer;
+ import java.util.function.Predicate;
++import java.util.function.Supplier;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+ import net.minecraft.BlockUtil;
+@@ -153,6 +154,7 @@ import org.bukkit.event.entity.EntityPortalEvent;
+ import org.bukkit.event.entity.EntityPoseChangeEvent;
+ import org.bukkit.event.player.PlayerTeleportEvent;
+ import org.bukkit.plugin.PluginManager;
++import world.chiyogami.thread.WorldTask;
+ // CraftBukkit end
+ 
+ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -3513,14 +3515,18 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     }
+ 
+     @Nullable
+-    public Entity teleportTo(ServerLevel worldserver, PositionImpl location) {
++    public Entity teleportTo(ServerLevel serverLevel, PositionImpl location) {
+         // CraftBukkit end
+         // Paper start - fix bad state entities causing dupes
+         if (!this.isAlive() || !this.valid) {
+-            LOGGER.warn("Illegal Entity Teleport " + this + " to " + worldserver + ":" + location, new Throwable());
++            LOGGER.warn("Illegal Entity Teleport " + this + " to " + serverLevel + ":" + location, new Throwable()); // Chiyogami - thread safe teleport
+             return null;
+         }
+         // Paper end
++        // Chiyogami start - thread safe teleport
++        Supplier<Entity> teleportTask = () -> {
++        ServerLevel worldserver = serverLevel;
++        // Chiyogami end
+         if (this.level() instanceof ServerLevel && !this.isRemoved()) {
+             this.level().getProfiler().push("changeDimension");
+             // CraftBukkit start
+@@ -3595,6 +3601,14 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         } else {
+             return null;
+         }
++        // Chiyogami start - thread safe teleport
++        };
++        if (serverLevel == this.level) {
++            return teleportTask.get();
++        } else {
++            return this.level.worldThread.runWorldTaskThreadSafely(serverLevel.worldThread, new WorldTask<>(teleportTask), "NMS Entity teleport.");
++        }
++        // Chiyogami end
+     }
+ 
+     protected void removeAfterChangingDimensions() {

@@ -1,0 +1,145 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Mon, 12 Jun 2023 18:10:05 +0900
+Subject: [PATCH] chiyogami-init-commit-timings
+
+
+diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+index 22687667ec69a954261e55e59261286ac1b8b8cd..4313a2ac8cd60022368e0e3243003a3354b642e8 100644
+--- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
++++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+@@ -72,69 +72,73 @@ public class WorldTimingsHandler {
+     public WorldTimingsHandler(Level server) {
+         String name = ((PrimaryLevelData) server.getLevelData()).getLevelName() + " - ";
+ 
+-        mobSpawn = Timings.ofSafe(name + "mobSpawn");
+-        doChunkUnload = Timings.ofSafe(name + "doChunkUnload");
+-        scheduledBlocks = Timings.ofSafe(name + "Scheduled Blocks");
+-        scheduledBlocksCleanup = Timings.ofSafe(name + "Scheduled Blocks - Cleanup");
+-        scheduledBlocksTicking = Timings.ofSafe(name + "Scheduled Blocks - Ticking");
+-        chunkTicks = Timings.ofSafe(name + "Chunk Ticks");
+-        lightChunk = Timings.ofSafe(name + "Light Chunk");
+-        chunkTicksBlocks = Timings.ofSafe(name + "Chunk Ticks - Blocks");
+-        doVillages = Timings.ofSafe(name + "doVillages");
+-        doChunkMap = Timings.ofSafe(name + "doChunkMap");
+-        doChunkMapUpdate = Timings.ofSafe(name + "doChunkMap - Update");
+-        doChunkMapToUpdate = Timings.ofSafe(name + "doChunkMap - To Update");
+-        doChunkMapSortMissing = Timings.ofSafe(name + "doChunkMap - Sort Missing");
+-        doChunkMapSortSendToPlayers = Timings.ofSafe(name + "doChunkMap - Sort Send To Players");
+-        doChunkMapPlayersNeedingChunks = Timings.ofSafe(name + "doChunkMap - Players Needing Chunks");
+-        doChunkMapPendingSendToPlayers = Timings.ofSafe(name + "doChunkMap - Pending Send To Players");
+-        doChunkMapUnloadChunks = Timings.ofSafe(name + "doChunkMap - Unload Chunks");
+-        doSounds = Timings.ofSafe(name + "doSounds");
+-        doChunkGC = Timings.ofSafe(name + "doChunkGC");
+-        doPortalForcer = Timings.ofSafe(name + "doPortalForcer");
+-        entityTick = Timings.ofSafe(name + "entityTick");
+-        entityRemoval = Timings.ofSafe(name + "entityRemoval");
+-        tileEntityTick = Timings.ofSafe(name + "tileEntityTick");
+-        tileEntityPending = Timings.ofSafe(name + "tileEntityPending");
+-
+-        chunkLoad = Timings.ofSafe(name + "Chunk Load");
+-        chunkLoadPopulate = Timings.ofSafe(name + "Chunk Load - Populate");
+-        syncChunkLoad = Timings.ofSafe(name + "Sync Chunk Load");
+-        chunkLoadLevelTimer = Timings.ofSafe(name + "Chunk Load - Load Level");
+-        chunkIO = Timings.ofSafe(name + "Chunk Load - DiskIO");
+-        chunkPostLoad = Timings.ofSafe(name + "Chunk Load - Post Load");
+-        worldSave = Timings.ofSafe(name + "World Save");
+-        worldSaveLevel = Timings.ofSafe(name + "World Save - Level");
+-        worldSaveChunks = Timings.ofSafe(name + "World Save - Chunks");
+-        chunkSaveData = Timings.ofSafe(name + "Chunk Save - Data");
+-
+-        tracker1 = Timings.ofSafe(name + "tracker stage 1");
+-        tracker2 = Timings.ofSafe(name + "tracker stage 2");
+-        doTick = Timings.ofSafe(name + "doTick");
+-        tickEntities = Timings.ofSafe(name + "tickEntities");
+-
+-        chunks = Timings.ofSafe(name + "Chunks");
+-        newEntities = Timings.ofSafe(name + "New entity registration");
+-        raids = Timings.ofSafe(name + "Raids");
+-        chunkProviderTick = Timings.ofSafe(name + "Chunk provider tick");
+-        broadcastChunkUpdates = Timings.ofSafe(name + "Broadcast chunk updates");
+-        countNaturalMobs = Timings.ofSafe(name + "Count natural mobs");
+-
+-
+-        miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
+-
+-        poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
+-        chunkUnload = Timings.ofSafe(name + "Chunk unload - Chunk");
+-        poiSaveDataSerialization = Timings.ofSafe(name + "Chunk save - POI Data serialization");
+-        chunkSave = Timings.ofSafe(name + "Chunk save - Chunk");
+-        chunkSaveDataSerialization = Timings.ofSafe(name + "Chunk save - Chunk Data serialization");
+-        chunkSaveIOWait = Timings.ofSafe(name + "Chunk save - Chunk IO Wait");
+-        chunkUnloadPrepareSave = Timings.ofSafe(name + "Chunk unload - Async Save Prepare");
+-        chunkUnloadPOISerialization = Timings.ofSafe(name + "Chunk unload - POI Data Serialization");
+-        chunkUnloadDataSave = Timings.ofSafe(name + "Chunk unload - Data Serialization");
++        mobSpawn = Timings.ofSafeForWorld(name + "mobSpawn");
++        doChunkUnload = Timings.ofSafeForWorld(name + "doChunkUnload");
++        scheduledBlocks = Timings.ofSafeForWorld(name + "Scheduled Blocks");
++        scheduledBlocksCleanup = Timings.ofSafeForWorld(name + "Scheduled Blocks - Cleanup");
++        scheduledBlocksTicking = Timings.ofSafeForWorld(name + "Scheduled Blocks - Ticking");
++        chunkTicks = Timings.ofSafeForWorld(name + "Chunk Ticks");
++        lightChunk = Timings.ofSafeForWorld(name + "Light Chunk");
++        chunkTicksBlocks = Timings.ofSafeForWorld(name + "Chunk Ticks - Blocks");
++        doVillages = Timings.ofSafeForWorld(name + "doVillages");
++        doChunkMap = Timings.ofSafeForWorld(name + "doChunkMap");
++        doChunkMapUpdate = Timings.ofSafeForWorld(name + "doChunkMap - Update");
++        doChunkMapToUpdate = Timings.ofSafeForWorld(name + "doChunkMap - To Update");
++        doChunkMapSortMissing = Timings.ofSafeForWorld(name + "doChunkMap - Sort Missing");
++        doChunkMapSortSendToPlayers = Timings.ofSafeForWorld(name + "doChunkMap - Sort Send To Players");
++        doChunkMapPlayersNeedingChunks = Timings.ofSafeForWorld(name + "doChunkMap - Players Needing Chunks");
++        doChunkMapPendingSendToPlayers = Timings.ofSafeForWorld(name + "doChunkMap - Pending Send To Players");
++        doChunkMapUnloadChunks = Timings.ofSafeForWorld(name + "doChunkMap - Unload Chunks");
++        doSounds = Timings.ofSafeForWorld(name + "doSounds");
++        doChunkGC = Timings.ofSafeForWorld(name + "doChunkGC");
++        doPortalForcer = Timings.ofSafeForWorld(name + "doPortalForcer");
++        entityTick = Timings.ofSafeForWorld(name + "entityTick");
++        entityRemoval = Timings.ofSafeForWorld(name + "entityRemoval");
++        tileEntityTick = Timings.ofSafeForWorld(name + "tileEntityTick");
++        tileEntityPending = Timings.ofSafeForWorld(name + "tileEntityPending");
++
++        chunkLoad = Timings.ofSafeForWorld(name + "Chunk Load");
++        chunkLoadPopulate = Timings.ofSafeForWorld(name + "Chunk Load - Populate");
++        syncChunkLoad = Timings.ofSafeForWorld(name + "Sync Chunk Load");
++        chunkLoadLevelTimer = Timings.ofSafeForWorld(name + "Chunk Load - Load Level");
++        chunkIO = Timings.ofSafeForWorld(name + "Chunk Load - DiskIO");
++        chunkPostLoad = Timings.ofSafeForWorld(name + "Chunk Load - Post Load");
++        worldSave = Timings.ofSafeForWorld(name + "World Save");
++        worldSaveLevel = Timings.ofSafeForWorld(name + "World Save - Level");
++        worldSaveChunks = Timings.ofSafeForWorld(name + "World Save - Chunks");
++        chunkSaveData = Timings.ofSafeForWorld(name + "Chunk Save - Data");
++
++        tracker1 = Timings.ofSafeForWorld(name + "tracker stage 1");
++        tracker2 = Timings.ofSafeForWorld(name + "tracker stage 2");
++        doTick = Timings.ofSafeForWorld(name + "doTick");
++        tickEntities = Timings.ofSafeForWorld(name + "tickEntities");
++
++        chunks = Timings.ofSafeForWorld(name + "Chunks");
++        newEntities = Timings.ofSafeForWorld(name + "New entity registration");
++        raids = Timings.ofSafeForWorld(name + "Raids");
++        chunkProviderTick = Timings.ofSafeForWorld(name + "Chunk provider tick");
++        broadcastChunkUpdates = Timings.ofSafeForWorld(name + "Broadcast chunk updates");
++        countNaturalMobs = Timings.ofSafeForWorld(name + "Count natural mobs");
++
++
++        miscMobSpawning = Timings.ofSafeForWorld(name + "Mob spawning - Misc");
++
++        poiUnload = Timings.ofSafeForWorld(name + "Chunk unload - POI");
++        chunkUnload = Timings.ofSafeForWorld(name + "Chunk unload - Chunk");
++        poiSaveDataSerialization = Timings.ofSafeForWorld(name + "Chunk save - POI Data serialization");
++        chunkSave = Timings.ofSafeForWorld(name + "Chunk save - Chunk");
++        chunkSaveDataSerialization = Timings.ofSafeForWorld(name + "Chunk save - Chunk Data serialization");
++        chunkSaveIOWait = Timings.ofSafeForWorld(name + "Chunk save - Chunk IO Wait");
++        chunkUnloadPrepareSave = Timings.ofSafeForWorld(name + "Chunk unload - Async Save Prepare");
++        chunkUnloadPOISerialization = Timings.ofSafeForWorld(name + "Chunk unload - POI Data Serialization");
++        chunkUnloadDataSave = Timings.ofSafeForWorld(name + "Chunk unload - Data Serialization");
+     }
+ 
+     public static Timing getTickList(ServerLevel worldserver, String timingsType) {
+-        return Timings.ofSafe(((PrimaryLevelData) worldserver.getLevelData()).getLevelName() + " - Scheduled " + timingsType);
++        return Timings.ofSafeForWorld(((PrimaryLevelData) worldserver.getLevelData()).getLevelName() + " - Scheduled " + timingsType);
++    }
++
++    public static Timing getHandlerForWorld(String name) {
++        return Timings.ofSafeForWorld(name);
+     }
+ }

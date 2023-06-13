@@ -1,0 +1,196 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Mon, 12 Jun 2023 19:44:29 +0900
+Subject: [PATCH] chiyogami-init-commit-thread-1
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..65119637409df5840ea63c529bd819bf486f21f2 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -17,6 +17,7 @@ import org.bukkit.plugin.IllegalPluginAccessException;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.RegisteredListener;
+ import org.jetbrains.annotations.NotNull;
++import world.chiyogami.thread.WorldThreadSafeLock;
+ 
+ import java.lang.reflect.Method;
+ import java.util.Arrays;
+@@ -24,11 +25,14 @@ import java.util.HashMap;
+ import java.util.HashSet;
+ import java.util.Map;
+ import java.util.Set;
++import java.util.concurrent.locks.ReentrantLock;
+ import java.util.logging.Level;
+ 
+-class PaperEventManager {
++public class PaperEventManager {
+ 
+     private final Server server;
++    public static boolean synchronizedEvent = true; // Chiyogami
++    private final ReentrantLock EVENT_LOCK = new WorldThreadSafeLock(true); // Chiyogami
+ 
+     public PaperEventManager(Server server) {
+         this.server = server;
+@@ -42,6 +46,24 @@ class PaperEventManager {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+         }
+ 
++        if (synchronizedEvent) {
++            boolean isSync = !event.isAsynchronous();
++            if (isSync) {
++                EVENT_LOCK.lock();
++                try {
++                    runEvent(event);
++                } finally {
++                    EVENT_LOCK.unlock();
++                }
++            } else {
++                runEvent(event);
++            }
++        } else {
++            runEvent(event);
++        }
++    }
++
++    private void runEvent(Event event) {
+         HandlerList handlers = event.getHandlers();
+         RegisteredListener[] listeners = handlers.getRegisteredListeners();
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 6551b9880bda122923730097209cdb4b5fd0a82a..5f396cb68db82068a8b660fa861fc4bf4c17325b 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -309,6 +309,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+     private ResourceLocation lootTable;
+     private final EntityDimensions dimensions;
+     private final FeatureFlagSet requiredFeatures;
++    public final String id; // Chiyogami
+ 
+     private static <T extends Entity> EntityType<T> register(String id, EntityType.Builder type) { // CraftBukkit - decompile error
+         return (EntityType) Registry.register(BuiltInRegistries.ENTITY_TYPE, id, (EntityType<T>) type.build(id)); // CraftBukkit - decompile error
+@@ -344,6 +345,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+         this.clientTrackingRange = maxTrackDistance;
+         this.updateInterval = trackTickInterval;
+         this.requiredFeatures = requiredFeatures;
++        this.id = id; // Chiyogami
+     }
+ 
+     // Chiyogami start - timings
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 147d802d9207e358fdb2d1c7806fc2f634dcfd98..37e6d7f86a0dcecae1777ecb71bae11b18e8812b 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -102,6 +102,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.entity.SpawnCategory;
+ import org.bukkit.event.block.BlockPhysicsEvent;
+ import org.bukkit.event.world.GenericGameEvent;
++import world.chiyogami.thread.WorldThread;
+ // CraftBukkit end
+ 
+ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -121,7 +122,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     protected final NeighborUpdater neighborUpdater;
+     private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
+     private boolean tickingBlockEntities;
+-    public final Thread thread;
++    public Thread thread;
+     private final boolean isDebug;
+     private int skyDarken;
+     protected int randValue = RandomSource.create().nextInt();
+@@ -183,6 +184,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     private int tileTickPosition;
+     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+     public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
++    public final WorldThread worldThread = new WorldThread(this); // Chiyogami
+ 
+     // Paper start - fix and optimise world upgrading
+     // copied from below
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 1a481fb4f4228f0fea8a7dc6132248c98b727c90..c12b27d0566ff44d035d1fe8901398ef1329d24b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -137,6 +137,8 @@ import org.bukkit.util.RayTraceResult;
+ import org.bukkit.util.StructureSearchResult;
+ import org.bukkit.util.Vector;
+ import org.jetbrains.annotations.NotNull;
++import world.chiyogami.thread.WorldThread;
++import world.chiyogami.thread.WorldThreadRunnable;
+ 
+ public class CraftWorld extends CraftRegionAccessor implements World {
+     public static final int CUSTOM_DIMENSION_OFFSET = 10;
+@@ -2362,6 +2364,22 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         this.getHandle().chunkSource.chunkMap.setSendViewDistance(viewDistance); // Paper - replace player chunk loader
+     }
+     // Paper end - view distance api
++    // Chiyogami start - thread
++    @Override
++    public void scheduleTask(Runnable runnable, long period, long delay) {
++        if (runnable instanceof WorldThreadRunnable) {
++            WorldThread worldThread = this.getHandle().worldThread;
++            worldThread.scheduleWorldThreadRunnable((WorldThreadRunnable) runnable);
++        } else {
++            new WorldThreadRunnable() {
++                @Override
++                public void run() {
++                    runnable.run();
++                }
++            }.runTaskTimer(this, delay, period);
++        }
++    }
++    // Chiyogami end
+ 
+     // Spigot start
+     private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot()
+diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
+index c02a04d284734b5f545b64307ed4aea337c1465f..ba6a0e8afabdb05fdf2b6e9691e65fe8d66b4b5d 100644
+--- a/src/main/java/org/spigotmc/AsyncCatcher.java
++++ b/src/main/java/org/spigotmc/AsyncCatcher.java
+@@ -1,6 +1,7 @@
+ package org.spigotmc;
+ 
+ import net.minecraft.server.MinecraftServer;
++import world.chiyogami.thread.WorldThreadPool;
+ 
+ public class AsyncCatcher
+ {
+@@ -10,10 +11,17 @@ public class AsyncCatcher
+ 
+     public static void catchOp(String reason)
+     {
+-        if ( !io.papermc.paper.util.TickThread.isTickThread() ) // Paper // Paper - rewrite chunk system
++        if ( isAsync() ) // Paper // Paper - rewrite chunk system // Chiyogami
+         {
+             MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable()); // Paper
+             throw new IllegalStateException( "Asynchronous " + reason + "!" );
+         }
+     }
++    //Chiyogami start - thread
++    public static boolean isAsync() {
++        return !WorldThreadPool.isWorldThread() && !isMainThread() && !io.papermc.paper.util.TickThread.isTickThread();
++    }
++
++    public static boolean isMainThread() {return MinecraftServer.getServer().serverThread == Thread.currentThread();}
++    //Chiyogami end
+ }
+diff --git a/src/main/java/world/chiyogami/config/ChiyogamiConfig.java b/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
+index 5b905dfe18a47166aaa37b31c326fd20a0ccfd1c..8dacd2f36395bedd25d4ce97822a83bd8be8b079 100644
+--- a/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
++++ b/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
+@@ -1,6 +1,7 @@
+ package world.chiyogami.config;
+ 
+ 
++import io.papermc.paper.plugin.manager.PaperEventManager;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.bukkit.plugin.SimplePluginManager;
+ import world.chiyogami.log.ChiyogamiLogger;
+@@ -100,7 +101,7 @@ public final class ChiyogamiConfig {
+             
+             ChiyogamiLogger.isShowLogs = SHOW_CHIYOGAMI_LOG.getValue();
+             
+-            SimplePluginManager.synchronizedEvent = SYNCHRONIZED_EVENT.getValue();
++            PaperEventManager.synchronizedEvent = SYNCHRONIZED_EVENT.getValue();
+             
+             //ParallelWorldBridge.parallelWorldBridge = PARALLEL_WORLD_BRIDGE.getValue();
+             

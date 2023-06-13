@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 13 Jun 2023 10:48:21 +0900
+Subject: [PATCH] chiyogami-init-commit-thread
+
+
+diff --git a/src/main/java/io/papermc/paper/util/TickThread.java b/src/main/java/io/papermc/paper/util/TickThread.java
+index f9063e2282f89e97a378f06822cde0a64ab03f9a..0b8084dd814183efa9ec3f340c1b2c99f83f09eb 100644
+--- a/src/main/java/io/papermc/paper/util/TickThread.java
++++ b/src/main/java/io/papermc/paper/util/TickThread.java
+@@ -12,6 +12,8 @@ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.Vec3;
+ import org.bukkit.Bukkit;
++import org.spigotmc.AsyncCatcher;
++
+ import java.util.concurrent.atomic.AtomicInteger;
+ 
+ public class TickThread extends Thread {
+@@ -110,7 +112,7 @@ public class TickThread extends Thread {
+     }
+ 
+     public static boolean isTickThread() {
+-        return Thread.currentThread() instanceof TickThread;
++        return /*Thread.currentThread() instanceof TickThread*/!AsyncCatcher.isAsync();
+     }
+ 
+     public static boolean isShutdownThread() {
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 37e6d7f86a0dcecae1777ecb71bae11b18e8812b..05cc68996444999135873ef9bf9c2a826623597c 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -102,6 +102,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.entity.SpawnCategory;
+ import org.bukkit.event.block.BlockPhysicsEvent;
+ import org.bukkit.event.world.GenericGameEvent;
++import org.spigotmc.AsyncCatcher;
+ import world.chiyogami.thread.WorldThread;
+ // CraftBukkit end
+ 
+@@ -438,7 +439,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
+         // Paper start - make sure loaded chunks get the inlined variant of this function
+         net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
+-        if (cps.mainThread == Thread.currentThread()) {
++        if (!AsyncCatcher.isAsync()) {
+             LevelChunk ifLoaded = cps.getChunkAtIfLoadedMainThread(chunkX, chunkZ);
+             if (ifLoaded != null) {
+                 return ifLoaded;

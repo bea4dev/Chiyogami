@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Mon, 12 Jun 2023 18:22:32 +0900
+Subject: [PATCH] chiyogami-init-commit-timings-2
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 18aac3da3c88f33b1a71a5920a8daa27e9723913..b314e0125316fb959282c826da3df618185ae265 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1336,7 +1336,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // Spigot end
+         // Paper start- timings
+         final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity);
+-        timer = isActive ? entity.getType().tickTimer.startTiming() : entity.getType().inactiveTickTimer.startTiming(); // Paper
++        timer = isActive ? entity.getType().getTickTimer(this).startTiming() : entity.getType().getInactiveTickTimer(this).startTiming(); // Paper // Chiyogami
+         try {
+         // Paper end - timings
+         entity.setOldPosAndRot();
+@@ -1376,7 +1376,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             if (passenger instanceof Player || this.entityTickList.contains(passenger)) {
+                 // Paper - EAR 2
+                 final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(passenger);
+-                co.aikar.timings.Timing timer = isActive ? passenger.getType().passengerTickTimer.startTiming() : passenger.getType().passengerInactiveTickTimer.startTiming(); // Paper
++                co.aikar.timings.Timing timer = isActive ? passenger.getType().getPassengerTickTimer(this).startTiming() : passenger.getType().getPassengerInactiveTickTimer(this).startTiming(); // Paper // Chiyogami
+                 try {
+                 // Paper end
+                 passenger.setOldPosAndRot();
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 9afc81ccb237c3655d64cdbe8a0db9a4d7791043..6551b9880bda122923730097209cdb4b5fd0a82a 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -1,11 +1,12 @@
+ package net.minecraft.world.entity;
+ 
++import co.aikar.timings.Timing;
++import co.aikar.timings.WorldTimingsHandler;
+ import com.google.common.collect.ImmutableSet;
+ import com.mojang.logging.LogUtils;
+-import java.util.List;
+-import java.util.Optional;
+-import java.util.Spliterator;
+-import java.util.UUID;
++
++import java.util.*;
++import java.util.concurrent.ConcurrentHashMap;
+ import java.util.function.Consumer;
+ import java.util.function.Function;
+ import java.util.stream.Stream;
+@@ -345,6 +346,29 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+         this.requiredFeatures = requiredFeatures;
+     }
+ 
++    // Chiyogami start - timings
++    private final Map<String, Timing> tickMap = new ConcurrentHashMap<>();
++    private final Map<String, Timing> inactiveTickMap = new ConcurrentHashMap<>();
++    private final Map<String, Timing> passengerTickMap = new ConcurrentHashMap<>();
++    private final Map<String, Timing> passengerInactiveTickMap = new ConcurrentHashMap<>();
++
++    public Timing getTickTimer(Level level){
++        return tickMap.computeIfAbsent(level.getWorld().getName(), k -> WorldTimingsHandler.getHandlerForWorld(k + ": " + id + " - tick"));
++    }
++
++    public Timing getInactiveTickTimer(Level level){
++        return inactiveTickMap.computeIfAbsent(level.getWorld().getName(), k -> WorldTimingsHandler.getHandlerForWorld(k + ": " + id + " - inactiveTick"));
++    }
++
++    public Timing getPassengerTickTimer(Level level){
++        return passengerTickMap.computeIfAbsent(level.getWorld().getName(), k -> WorldTimingsHandler.getHandlerForWorld(k + ": " + id + " - passengerTick"));
++    }
++
++    public Timing getPassengerInactiveTickTimer(Level level){
++        return passengerInactiveTickMap.computeIfAbsent(level.getWorld().getName(), k -> WorldTimingsHandler.getHandlerForWorld(k + ": " + id + " - passengerInactiveTick"));
++    }
++    // Chiyogami end
++
+     @Nullable
+     public T spawn(ServerLevel world, @Nullable ItemStack stack, @Nullable Player player, BlockPos pos, MobSpawnType spawnReason, boolean alignPosition, boolean invertY) {
+         // CraftBukkit start

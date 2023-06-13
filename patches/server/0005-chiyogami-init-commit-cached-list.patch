@@ -1,0 +1,299 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Mon, 12 Jun 2023 18:34:33 +0900
+Subject: [PATCH] chiyogami-init-commit-cached-list
+
+
+diff --git a/src/main/java/io/papermc/paper/util/CachedLists.java b/src/main/java/io/papermc/paper/util/CachedLists.java
+index e08f4e39db4ee3fed62e37364d17dcc5c5683504..30a752b6a6f7407e27eafc640a45f310312bd8af 100644
+--- a/src/main/java/io/papermc/paper/util/CachedLists.java
++++ b/src/main/java/io/papermc/paper/util/CachedLists.java
+@@ -1,57 +1,185 @@
+ package io.papermc.paper.util;
+ 
+ import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.AABB;
+-import org.bukkit.Bukkit;
+ import org.bukkit.craftbukkit.util.UnsafeList;
++import org.spigotmc.AsyncCatcher;
++import world.chiyogami.thread.WorldThread;
++
+ import java.util.List;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
+ 
+ public final class CachedLists {
+ 
++    private final Level level;
++
++    private final UnsafeList<AABB> TEMP_COLLISION_LIST = new UnsafeList<>(1024);
++    private boolean tempCollisionListInUse;
++
++    private final UnsafeList<Entity> TEMP_GET_ENTITIES_LIST = new UnsafeList<>(1024);
++    private boolean tempGetEntitiesListInUse;
++
++    private CachedLists(Level level){
++        this.level = level;
++    }
++
++
++
+     // Paper start - optimise collisions
+-    static final UnsafeList<AABB> TEMP_COLLISION_LIST = new UnsafeList<>(1024);
+-    static boolean tempCollisionListInUse;
++    static final Map<Level, CachedLists> cashedListMap = new ConcurrentHashMap<>();
+ 
+-    public static UnsafeList<AABB> getTempCollisionList() {
+-        if (!Bukkit.isPrimaryThread() || tempCollisionListInUse) {
++    public static List<AABB> getTempCollisionList(Level level) {
++        CachedLists cachedLists = cashedListMap.computeIfAbsent(level, CachedLists::new);
++        if (cachedLists.tempCollisionListInUse) {
+             return new UnsafeList<>(16);
+         }
+-        tempCollisionListInUse = true;
+-        return TEMP_COLLISION_LIST;
++
++        WorldThread worldThread = cachedLists.level.worldThread;
++        if (worldThread != null) {
++            if (worldThread.getCurrentThread() != Thread.currentThread()) {
++                return new UnsafeList<>(16);
++            }
++        }
++
++        cachedLists.tempCollisionListInUse = true;
++        return cachedLists.TEMP_COLLISION_LIST;
+     }
+ 
+-    public static void returnTempCollisionList(List<AABB> list) {
+-        if (list != TEMP_COLLISION_LIST) {
++
++    public static List<AABB> getTempCollisionList() {
++        for(CachedLists cachedLists : cashedListMap.values()){
++            WorldThread worldThread = cachedLists.level.worldThread;
++            if (worldThread == null) continue;
++
++            if(Thread.currentThread() == worldThread.getCurrentThread() && !cachedLists.tempCollisionListInUse){
++                cachedLists.tempCollisionListInUse = true;
++                return cachedLists.TEMP_COLLISION_LIST;
++            }
++        }
++
++        if (!AsyncCatcher.isMainThread()) {
++            return new UnsafeList<>(16);
++        }
++
++        UnsafeList<AABB> allList = new UnsafeList<>(1024);
++        for(CachedLists cachedLists : cashedListMap.values()){
++            allList.addAll(cachedLists.TEMP_COLLISION_LIST);
++        }
++        return allList;
++    }
++
++    public static void returnTempCollisionList(List<AABB> list, Level level) {
++        CachedLists cachedLists = cashedListMap.get(level);
++        if (cachedLists == null){
++            return;
++        }
++
++        if (cachedLists.TEMP_COLLISION_LIST != list) {
+             return;
+         }
+-        ((UnsafeList)list).setSize(0);
+-        tempCollisionListInUse = false;
++
++        cachedLists.TEMP_COLLISION_LIST.setSize(0);
++        cachedLists.tempCollisionListInUse = false;
+     }
+ 
+-    static final UnsafeList<Entity> TEMP_GET_ENTITIES_LIST = new UnsafeList<>(1024);
+-    static boolean tempGetEntitiesListInUse;
++    public static void returnTempCollisionList(List<AABB> list) {
++        for(CachedLists cachedLists : cashedListMap.values()){
++            if(cachedLists.TEMP_COLLISION_LIST == list){
++                cachedLists.TEMP_COLLISION_LIST.setSize(0);
++                cachedLists.tempCollisionListInUse = false;
++                return;
++            }
++        }
+ 
+-    public static UnsafeList<Entity> getTempGetEntitiesList() {
+-        if (!Bukkit.isPrimaryThread() || tempGetEntitiesListInUse) {
++        ((UnsafeList<?>)list).setSize(0);
++    }
++
++
++    public static List<Entity> getTempGetEntitiesList(Level level) {
++        if (level == null) {
++            return getTempGetEntitiesList();
++        }
++
++        CachedLists cachedLists = cashedListMap.computeIfAbsent(level, CachedLists::new);
++        if (cachedLists.tempGetEntitiesListInUse) {
+             return new UnsafeList<>(16);
+         }
+-        tempGetEntitiesListInUse = true;
+-        return TEMP_GET_ENTITIES_LIST;
++
++        WorldThread worldThread = cachedLists.level.worldThread;
++        if (worldThread != null) {
++            if (worldThread.getCurrentThread() != Thread.currentThread()) {
++                return new UnsafeList<>(16);
++            }
++        }
++
++        cachedLists.tempGetEntitiesListInUse = true;
++        return cachedLists.TEMP_GET_ENTITIES_LIST;
+     }
+ 
+-    public static void returnTempGetEntitiesList(List<Entity> list) {
+-        if (list != TEMP_GET_ENTITIES_LIST) {
++    public static List<Entity> getTempGetEntitiesList() {
++        for(CachedLists cachedLists : cashedListMap.values()){
++            WorldThread worldThread = cachedLists.level.worldThread;
++            if (worldThread == null) continue;
++
++            if(Thread.currentThread() == worldThread.getCurrentThread() && !cachedLists.tempGetEntitiesListInUse){
++                cachedLists.tempGetEntitiesListInUse = true;
++                return cachedLists.TEMP_GET_ENTITIES_LIST;
++            }
++        }
++
++        if (!AsyncCatcher.isMainThread()) {
++            return new UnsafeList<>(16);
++        }
++
++        UnsafeList<Entity> allList = new UnsafeList<>(1024);
++        for(CachedLists cachedLists : cashedListMap.values()){
++            allList.addAll(cachedLists.TEMP_GET_ENTITIES_LIST);
++        }
++        return allList;
++    }
++
++    public static void returnTempGetEntitiesList(List<Entity> list, Level level) {
++        if (level == null) {
++            returnTempGetEntitiesList(list);
+             return;
+         }
+-        ((UnsafeList)list).setSize(0);
+-        tempGetEntitiesListInUse = false;
++
++        for(CachedLists cachedLists : cashedListMap.values()){
++            if(level == cachedLists.level){
++                if (cachedLists.TEMP_GET_ENTITIES_LIST != list) {
++                    return;
++                }
++
++                cachedLists.TEMP_GET_ENTITIES_LIST.setSize(0);
++                cachedLists.tempGetEntitiesListInUse = false;
++                return;
++            }
++        }
++    }
++
++    public static void returnTempGetEntitiesList(List<Entity> list) {
++        for(CachedLists cachedLists : cashedListMap.values()){
++            if(cachedLists.TEMP_GET_ENTITIES_LIST == list){
++                cachedLists.TEMP_GET_ENTITIES_LIST.setSize(0);
++                cachedLists.tempGetEntitiesListInUse = false;
++                return;
++            }
++        }
++
++        ((UnsafeList<?>)list).setSize(0);
+     }
+     // Paper end - optimise collisions
+ 
+     public static void reset() {
+         // Paper start - optimise collisions
+-        TEMP_COLLISION_LIST.completeReset();
+-        TEMP_GET_ENTITIES_LIST.completeReset();
++        //TEMP_COLLISION_LIST.completeReset();
++        for(CachedLists cachedLists : cashedListMap.values()){
++            cachedLists.TEMP_COLLISION_LIST.completeReset();
++            cachedLists.TEMP_GET_ENTITIES_LIST.completeReset();
++        }
++        //TEMP_GET_ENTITIES_LIST.completeReset();
+         // Paper end - optimise collisions
+     }
+ }
+diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
+index a87f6380b2c387fb0cdd40d5087b5c93492e3c88..77f7f1c719537b847ca37fd2daa9e75e6aa0f879 100644
+--- a/src/main/java/io/papermc/paper/util/CollisionUtil.java
++++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
+@@ -10,6 +10,7 @@ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.level.CollisionGetter;
+ import net.minecraft.world.level.EntityGetter;
++import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.border.WorldBorder;
+@@ -819,7 +820,13 @@ public final class CollisionUtil {
+         // Vanilla for hard collisions has this backwards, and they expand by +epsilon but this causes terrible problems
+         // specifically with boat collisions.
+         aabb = aabb.inflate(-COLLISION_EPSILON, -COLLISION_EPSILON, -COLLISION_EPSILON);
+-        final List<Entity> entities = CachedLists.getTempGetEntitiesList();
++        // Chiyogami start - CachedList
++        Level level = null;
++        if (entity != null) {
++            level = entity.level;
++        }
++        final List<Entity> entities = CachedLists.getTempGetEntitiesList(level);
++        // Chiyogami end
+         try {
+             if (entity != null && entity.hardCollides()) {
+                 entityGetter.getEntities(entity, aabb, predicate, entities);
+@@ -840,7 +847,7 @@ public final class CollisionUtil {
+                 }
+             }
+         } finally {
+-            CachedLists.returnTempGetEntitiesList(entities);
++            CachedLists.returnTempGetEntitiesList(entities, level);
+         }
+ 
+         return ret;
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index d9c2d06ae24dcf80a497e75f4c7f63d401b77f9b..a50b4886e2c0ac27f10b93ef182ca029cacec4c2 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1652,7 +1652,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+     // Paper start - optimise out extra getCubes
+     private boolean hasNewCollision(final ServerLevel world, final Entity entity, final AABB oldBox, final AABB newBox) {
+-        final List<AABB> collisions = io.papermc.paper.util.CachedLists.getTempCollisionList();
++        final List<AABB> collisions = io.papermc.paper.util.CachedLists.getTempCollisionList(world);
+         try {
+             io.papermc.paper.util.CollisionUtil.getCollisions(world, entity, newBox, collisions, false, true,
+                 true, false, null, null);
+@@ -1666,7 +1666,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+             return false;
+         } finally {
+-            io.papermc.paper.util.CachedLists.returnTempCollisionList(collisions);
++            io.papermc.paper.util.CachedLists.returnTempCollisionList(collisions, world);
+         }
+     }
+     // Paper end - optimise out extra getCubes
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..dd80b900f707e81182825a8cefbbdde7b61785fc 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1444,7 +1444,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+             return movement;
+         }
+ 
+-        final List<AABB> potentialCollisions = io.papermc.paper.util.CachedLists.getTempCollisionList();
++        final List<AABB> potentialCollisions = io.papermc.paper.util.CachedLists.getTempCollisionList(world);
+         try {
+             final double stepHeight = (double)this.maxUpStep();
+             final AABB collisionBox;
+@@ -1500,7 +1500,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+                 return limitedMoveVector;
+             }
+         } finally {
+-            io.papermc.paper.util.CachedLists.returnTempCollisionList(potentialCollisions);
++            io.papermc.paper.util.CachedLists.returnTempCollisionList(potentialCollisions, world);
+         }
+         // Paper end - optimise collisions
+     }

@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 13 Jun 2023 10:50:54 +0900
+Subject: [PATCH] chiyogami-init-commit-thread-2
+
+
+diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
+index ba6a0e8afabdb05fdf2b6e9691e65fe8d66b4b5d..e73d8c11d382775a8d375f15a8fb121a83f1b2bc 100644
+--- a/src/main/java/org/spigotmc/AsyncCatcher.java
++++ b/src/main/java/org/spigotmc/AsyncCatcher.java
+@@ -1,5 +1,6 @@
+ package org.spigotmc;
+ 
++import io.papermc.paper.util.TickThread;
+ import net.minecraft.server.MinecraftServer;
+ import world.chiyogami.thread.WorldThreadPool;
+ 
+@@ -19,7 +20,7 @@ public class AsyncCatcher
+     }
+     //Chiyogami start - thread
+     public static boolean isAsync() {
+-        return !WorldThreadPool.isWorldThread() && !isMainThread() && !io.papermc.paper.util.TickThread.isTickThread();
++        return !WorldThreadPool.isWorldThread() && !isMainThread() && !(Thread.currentThread() instanceof TickThread);
+     }
+ 
+     public static boolean isMainThread() {return MinecraftServer.getServer().serverThread == Thread.currentThread();}
