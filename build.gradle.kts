@@ -3,25 +3,33 @@ plugins {
     `maven-publish`
 
     // Nothing special about this, just keep it up to date
-    id("com.github.johnrengelman.shadow") version "7.1.2" apply false
+    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
 
     // In general, keep this version in sync with upstream. Sometimes a newer version than upstream might work, but an older version is extremely likely to break.
-    id("io.papermc.paperweight.patcher") version "1.4.0"
+    id("io.papermc.paperweight.patcher") version "1.5.5"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
+val spigotDecompiler: Configuration by configurations.creating
 
 repositories {
     mavenCentral()
     maven(paperMavenPublicUrl) {
-        content { onlyForConfigurations(configurations.paperclip.name) }
+        content {
+            onlyForConfigurations(
+                configurations.paperclip.name,
+                spigotDecompiler.name,
+            )
+        }
     }
 }
 
 dependencies {
-    remapper("net.fabricmc:tiny-remapper:0.8.6:fat") // Must be kept in sync with upstream
-    decompiler("net.minecraftforge:forgeflower:2.0.605.1") // Must be kept in sync with upstream
-    paperclip("io.papermc:paperclip:3.0.2") // You probably want this to be kept in sync with upstream
+    //paramMappings("net.fabricmc:yarn:1.20.1+build.1:mergedv2")
+    remapper("net.fabricmc:tiny-remapper:0.8.6:fat")
+    decompiler("net.minecraftforge:forgeflower:2.0.627.2")
+    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.6")
+    paperclip("io.papermc:paperclip:3.0.3")
 }
 
 allprojects {
@@ -54,7 +62,7 @@ subprojects {
 }
 
 paperweight {
-    serverProject.set(project(":forktest-server"))
+    serverProject.set(project(":chiyogami-server"))
 
     remapRepo.set(paperMavenPublicUrl)
     decompileRepo.set(paperMavenPublicUrl)
@@ -62,10 +70,10 @@ paperweight {
     usePaperUpstream(providers.gradleProperty("paperRef")) {
         withPaperPatcher {
             apiPatchDir.set(layout.projectDirectory.dir("patches/api"))
-            apiOutputDir.set(layout.projectDirectory.dir("forktest-api"))
+            apiOutputDir.set(layout.projectDirectory.dir("chiyogami-api"))
 
             serverPatchDir.set(layout.projectDirectory.dir("patches/server"))
-            serverOutputDir.set(layout.projectDirectory.dir("forktest-server"))
+            serverOutputDir.set(layout.projectDirectory.dir("chiyogami-server"))
         }
     }
 }
@@ -75,7 +83,7 @@ paperweight {
 //
 
 tasks.generateDevelopmentBundle {
-    apiCoordinates.set("com.example.paperfork:forktest-api")
+    apiCoordinates.set("com.github.bea4dev:chiyogami-api")
     mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
     libraryRepositories.set(
         listOf(
@@ -88,7 +96,7 @@ tasks.generateDevelopmentBundle {
 
 allprojects {
     // Publishing API:
-    // ./gradlew :ForkTest-API:publish[ToMavenLocal]
+    // ./gradlew :Chiyogami-API:publish[ToMavenLocal]
     publishing {
         repositories {
             maven {
