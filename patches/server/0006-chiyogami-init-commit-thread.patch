@@ -27,7 +27,7 @@ index f9063e2282f89e97a378f06822cde0a64ab03f9a..0b8084dd814183efa9ec3f340c1b2c99
  
      public static boolean isShutdownThread() {
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 37e6d7f86a0dcecae1777ecb71bae11b18e8812b..05cc68996444999135873ef9bf9c2a826623597c 100644
+index 4e1bffd7bdcb88f83b3e33fb4c7aa66483f631fb..c6cac8ba8ab107d74e2599b5fe90fc7696a0fcb6 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -102,6 +102,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -38,7 +38,7 @@ index 37e6d7f86a0dcecae1777ecb71bae11b18e8812b..05cc68996444999135873ef9bf9c2a82
  import world.chiyogami.thread.WorldThread;
  // CraftBukkit end
  
-@@ -438,7 +439,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -522,7 +523,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
          // Paper start - make sure loaded chunks get the inlined variant of this function
          net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();

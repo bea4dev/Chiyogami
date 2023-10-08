@@ -1,14 +1,14 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: bea4dev <bea0224@outlook.jp>
-Date: Mon, 12 Jun 2023 19:44:29 +0900
-Subject: [PATCH] chiyogami-init-commit-thread-1
+Date: Mon, 9 Oct 2023 04:02:38 +0900
+Subject: [PATCH] fixed thread 1
 
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index ef36d793ab77c7b7208f8f5994815599cff470d1..5a0ae81a470ad77bb19c636088c202cb6dd36a4c 100644
+index f78b5fd3c3347d28da58777bff88903d2eb140f6..833dd1d3507bf1058a7e231d55148d05f9b9b5e8 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -1783,6 +1783,29 @@ public final class Bukkit {
+@@ -1904,6 +1904,29 @@ public final class Bukkit {
      public static boolean isPrimaryThread() {
          return server.isPrimaryThread();
      }
@@ -39,10 +39,10 @@ index ef36d793ab77c7b7208f8f5994815599cff470d1..5a0ae81a470ad77bb19c636088c202cb
      // Paper start
      /**
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 5b225bbb128893d67251a96ab318035802a0cf76..7de635bcde26a55af9cd5ab6053497390edd5e53 100644
+index 8d8fe04e6b09d2a5b1cc05002073df5c58cdcb96..4af22e8a859b616c12d778700076f611742f7532 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -1509,7 +1509,25 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -1623,6 +1623,25 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
       *     false otherwise
       */
      boolean isPrimaryThread();
@@ -56,7 +56,7 @@ index 5b225bbb128893d67251a96ab318035802a0cf76..7de635bcde26a55af9cd5ab605349739
 +     *     false otherwise
 +     */
 +    boolean isMainThread();
- 
++
 +    /**
 +     * Checks if the current thread is a world thread.
 +     *
@@ -65,14 +65,14 @@ index 5b225bbb128893d67251a96ab318035802a0cf76..7de635bcde26a55af9cd5ab605349739
 +     */
 +    boolean isWorldThread();
 +    // Chiyogami end
+ 
      // Paper start
      /**
-      * Gets the message that is displayed on the server list.
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 72f1576b8ce5b55b50f053f346ce42c52db4b568..fdc7b2270965014f2c320b16416dd9f0353073e9 100644
+index b8b97df069b28fa3cf32f1ad1f01f586a0cfbc78..d1fe7068abad240691e1334b9279b62e27ec5e6f 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -3908,6 +3908,31 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -3926,6 +3926,31 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
       */
      void setSendViewDistance(int viewDistance);
      // Paper end - view distance api
@@ -103,4 +103,4 @@ index 72f1576b8ce5b55b50f053f346ce42c52db4b568..fdc7b2270965014f2c320b16416dd9f0
 +    // Chiyogami end
  
      // Spigot start
-     public class Spigot {
+     /**

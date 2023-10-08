@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: bea4dev <bea0224@outlook.jp>
-Date: Mon, 12 Jun 2023 18:34:33 +0900
-Subject: [PATCH] chiyogami-init-commit-cached-list
+Date: Mon, 9 Oct 2023 03:50:04 +0900
+Subject: [PATCH] fixed cached list patch
 
 
 diff --git a/src/main/java/io/papermc/paper/util/CachedLists.java b/src/main/java/io/papermc/paper/util/CachedLists.java
@@ -218,24 +218,16 @@ index e08f4e39db4ee3fed62e37364d17dcc5c5683504..30a752b6a6f7407e27eafc640a45f310
      }
  }
 diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
-index a87f6380b2c387fb0cdd40d5087b5c93492e3c88..77f7f1c719537b847ca37fd2daa9e75e6aa0f879 100644
+index a87f6380b2c387fb0cdd40d5087b5c93492e3c88..b749c1a609a01e37a646356766369f6c9d928d91 100644
 --- a/src/main/java/io/papermc/paper/util/CollisionUtil.java
 +++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
-@@ -10,6 +10,7 @@ import net.minecraft.world.entity.Entity;
- import net.minecraft.world.item.Item;
- import net.minecraft.world.level.CollisionGetter;
- import net.minecraft.world.level.EntityGetter;
-+import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.Blocks;
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.level.border.WorldBorder;
-@@ -819,7 +820,13 @@ public final class CollisionUtil {
+@@ -819,7 +819,13 @@ public final class CollisionUtil {
          // Vanilla for hard collisions has this backwards, and they expand by +epsilon but this causes terrible problems
          // specifically with boat collisions.
          aabb = aabb.inflate(-COLLISION_EPSILON, -COLLISION_EPSILON, -COLLISION_EPSILON);
 -        final List<Entity> entities = CachedLists.getTempGetEntitiesList();
 +        // Chiyogami start - CachedList
-+        Level level = null;
++        net.minecraft.world.level.Level level = null;
 +        if (entity != null) {
 +            level = entity.level;
 +        }
@@ -244,7 +236,7 @@ index a87f6380b2c387fb0cdd40d5087b5c93492e3c88..77f7f1c719537b847ca37fd2daa9e75e
          try {
              if (entity != null && entity.hardCollides()) {
                  entityGetter.getEntities(entity, aabb, predicate, entities);
-@@ -840,7 +847,7 @@ public final class CollisionUtil {
+@@ -840,7 +846,7 @@ public final class CollisionUtil {
                  }
              }
          } finally {
@@ -254,11 +246,11 @@ index a87f6380b2c387fb0cdd40d5087b5c93492e3c88..77f7f1c719537b847ca37fd2daa9e75e
  
          return ret;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index d9c2d06ae24dcf80a497e75f4c7f63d401b77f9b..a50b4886e2c0ac27f10b93ef182ca029cacec4c2 100644
+index ab58827001b3b42e44d7f701c390480fed1fa1f1..acc4a1e81beb60a7de4a0c2aea54b933a3d5d150 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1652,7 +1652,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
- 
+@@ -1707,7 +1707,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+     // Paper end
      // Paper start - optimise out extra getCubes
      private boolean hasNewCollision(final ServerLevel world, final Entity entity, final AABB oldBox, final AABB newBox) {
 -        final List<AABB> collisions = io.papermc.paper.util.CachedLists.getTempCollisionList();
@@ -266,7 +258,7 @@ index d9c2d06ae24dcf80a497e75f4c7f63d401b77f9b..a50b4886e2c0ac27f10b93ef182ca029
          try {
              io.papermc.paper.util.CollisionUtil.getCollisions(world, entity, newBox, collisions, false, true,
                  true, false, null, null);
-@@ -1666,7 +1666,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -1721,7 +1721,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
              return false;
          } finally {
@@ -276,10 +268,10 @@ index d9c2d06ae24dcf80a497e75f4c7f63d401b77f9b..a50b4886e2c0ac27f10b93ef182ca029
      }
      // Paper end - optimise out extra getCubes
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..dd80b900f707e81182825a8cefbbdde7b61785fc 100644
+index 3e25851044b5a7d6ac077fecb1e851f34fa956b8..efe58ff4ab1bf99341496f2f1780125f35751523 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1444,7 +1444,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -1460,7 +1460,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
              return movement;
          }
  
@@ -288,7 +280,7 @@ index b38c4cbcf0405d82c7b6e018e80a3174e460c1a4..dd80b900f707e81182825a8cefbbdde7
          try {
              final double stepHeight = (double)this.maxUpStep();
              final AABB collisionBox;
-@@ -1500,7 +1500,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -1516,7 +1516,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
                  return limitedMoveVector;
              }
          } finally {

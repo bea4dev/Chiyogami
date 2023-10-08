@@ -5,7 +5,7 @@ Subject: [PATCH] chiyogami-init-commit-0
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ae42387a6e7c0e6c06d8cb92afa29470286d22c1..eee081944026b1247c080f56ff79ae864a235f39 100644
+index 67ee3a4ca8a6cdeb275653d492a1fea8037c51fb..8b5489f1b56694f379cd5271e1667cc3da145a42 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1,5 +1,6 @@
@@ -24,7 +24,7 @@ index ae42387a6e7c0e6c06d8cb92afa29470286d22c1..eee081944026b1247c080f56ff79ae86
  
  public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements CommandSource, AutoCloseable {
  
-@@ -1475,7 +1478,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1474,7 +1477,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -34,7 +34,7 @@ index ae42387a6e7c0e6c06d8cb92afa29470286d22c1..eee081944026b1247c080f56ff79ae86
          MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
          this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
          MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
-@@ -1517,17 +1522,25 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1530,17 +1535,25 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper end
          MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
  
@@ -61,7 +61,7 @@ index ae42387a6e7c0e6c06d8cb92afa29470286d22c1..eee081944026b1247c080f56ff79ae86
              /* Drop global time updates
              if (this.tickCount % 20 == 0) {
                  this.profiler.push("timeSync");
-@@ -1536,11 +1549,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1549,11 +1562,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              }
              // CraftBukkit end */
  
@@ -76,7 +76,7 @@ index ae42387a6e7c0e6c06d8cb92afa29470286d22c1..eee081944026b1247c080f56ff79ae86
                  // Paper start
                  for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
                      regionManager.recalculateRegions();
-@@ -1562,10 +1575,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1575,10 +1588,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  throw new ReportedException(crashreport);
              }
  
@@ -92,7 +92,7 @@ index ae42387a6e7c0e6c06d8cb92afa29470286d22c1..eee081944026b1247c080f56ff79ae86
          this.isIteratingOverLevels = false; // Paper
  
          this.profiler.popPush("connection");
-@@ -2755,6 +2771,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2768,6 +2784,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public final void executeMidTickTasks() {

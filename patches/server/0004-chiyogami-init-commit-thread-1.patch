@@ -78,7 +78,7 @@ index 6551b9880bda122923730097209cdb4b5fd0a82a..5f396cb68db82068a8b660fa861fc4bf
  
      // Chiyogami start - timings
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 147d802d9207e358fdb2d1c7806fc2f634dcfd98..37e6d7f86a0dcecae1777ecb71bae11b18e8812b 100644
+index 7d54c79f46f99f5500e9cb1f486037cafb27ee3a..4e1bffd7bdcb88f83b3e33fb4c7aa66483f631fb 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -102,6 +102,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -107,7 +107,7 @@ index 147d802d9207e358fdb2d1c7806fc2f634dcfd98..37e6d7f86a0dcecae1777ecb71bae11b
      // Paper start - fix and optimise world upgrading
      // copied from below
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 1a481fb4f4228f0fea8a7dc6132248c98b727c90..c12b27d0566ff44d035d1fe8901398ef1329d24b 100644
+index f857f490ffba2f25f7c06c5fb1a1905f0b51fbe2..c9f8629b2b51da8407b4dd5caecd67ff193e5092 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -137,6 +137,8 @@ import org.bukkit.util.RayTraceResult;
@@ -143,7 +143,7 @@ index 1a481fb4f4228f0fea8a7dc6132248c98b727c90..c12b27d0566ff44d035d1fe8901398ef
      // Spigot start
      private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot()
 diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
-index c02a04d284734b5f545b64307ed4aea337c1465f..ba6a0e8afabdb05fdf2b6e9691e65fe8d66b4b5d 100644
+index d678ca116f9b81ab9d7d99a698e0ce066c132f34..f74aa0086f0473e03bfd00291c6e8a06ef89d5a6 100644
 --- a/src/main/java/org/spigotmc/AsyncCatcher.java
 +++ b/src/main/java/org/spigotmc/AsyncCatcher.java
 @@ -1,6 +1,7 @@
@@ -154,7 +154,7 @@ index c02a04d284734b5f545b64307ed4aea337c1465f..ba6a0e8afabdb05fdf2b6e9691e65fe8
  
  public class AsyncCatcher
  {
-@@ -10,10 +11,17 @@ public class AsyncCatcher
+@@ -9,10 +10,17 @@ public class AsyncCatcher
  
      public static void catchOp(String reason)
      {

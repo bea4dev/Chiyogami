@@ -5,10 +5,10 @@ Subject: [PATCH] chiyogami-init-commit-1.20.1-fixed
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 4e0be501d9f4bc244b0222df42b210b7dc377d37..ce823bf72dea37d49735962e691644ed87f573bd 100644
+index d307fa88eee70c1653592e67b58934d9a5ab5de1..3e25851044b5a7d6ac077fecb1e851f34fa956b8 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -291,7 +291,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -303,7 +303,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      protected int boardingCooldown;
      @Nullable
      private Entity vehicle;
@@ -18,10 +18,10 @@ index 4e0be501d9f4bc244b0222df42b210b7dc377d37..ce823bf72dea37d49735962e691644ed
      public double yo;
      public double zo;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 1b3d46fe962a37d3bed8e4692e17f932527f2083..a6fb662c7bcf3a205dcad478adedf814674c53ad 100644
+index 74d06790de674cbd230a0b14ac9a6b614c9f84ef..ea2dbb73a2e1da171aa8009be089163fb2940065 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -250,12 +250,14 @@ import org.bukkit.scoreboard.Criteria;
+@@ -254,12 +254,14 @@ import org.bukkit.scoreboard.Criteria;
  import org.bukkit.structure.StructureManager;
  import org.bukkit.util.StringUtil;
  import org.bukkit.util.permissions.DefaultPermissions;
@@ -36,7 +36,7 @@ index 1b3d46fe962a37d3bed8e4692e17f932527f2083..a6fb662c7bcf3a205dcad478adedf814
  
  import javax.annotation.Nullable; // Paper
  import javax.annotation.Nonnull; // Paper
-@@ -2219,8 +2221,19 @@ public final class CraftServer implements Server {
+@@ -2351,8 +2353,19 @@ public final class CraftServer implements Server {
  
      @Override
      public boolean isPrimaryThread() {

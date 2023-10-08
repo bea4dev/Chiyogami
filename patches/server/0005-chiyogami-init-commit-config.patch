@@ -5,7 +5,7 @@ Subject: [PATCH] chiyogami-init-commit-config
 
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 9f422cbeaa52b3e6a0a27af4f8ad4ddb7808483f..f91d89215c774bfaba973d3266e0a791d5fb9280 100644
+index c49802c936ae8e3f4dc1badd98414d96714ecd60..6fe0f55e143ce2345b64a938e3c3990c427e164a 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -221,6 +221,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface

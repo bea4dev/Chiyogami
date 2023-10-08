@@ -5,7 +5,7 @@ Subject: [PATCH] chiyogami-init-commit-thread-2
 
 
 diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
-index ba6a0e8afabdb05fdf2b6e9691e65fe8d66b4b5d..e73d8c11d382775a8d375f15a8fb121a83f1b2bc 100644
+index f74aa0086f0473e03bfd00291c6e8a06ef89d5a6..b0c9cca3e198bc65c88d8f8fd42b8bded3307a6a 100644
 --- a/src/main/java/org/spigotmc/AsyncCatcher.java
 +++ b/src/main/java/org/spigotmc/AsyncCatcher.java
 @@ -1,5 +1,6 @@
@@ -15,7 +15,7 @@ index ba6a0e8afabdb05fdf2b6e9691e65fe8d66b4b5d..e73d8c11d382775a8d375f15a8fb121a
  import net.minecraft.server.MinecraftServer;
  import world.chiyogami.thread.WorldThreadPool;
  
-@@ -19,7 +20,7 @@ public class AsyncCatcher
+@@ -18,7 +19,7 @@ public class AsyncCatcher
      }
      //Chiyogami start - thread
      public static boolean isAsync() {

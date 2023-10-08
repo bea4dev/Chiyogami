@@ -5,7 +5,7 @@ Subject: [PATCH] chiyogami-init-commit-thread-safe-teleport
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index dd80b900f707e81182825a8cefbbdde7b61785fc..4e0be501d9f4bc244b0222df42b210b7dc377d37 100644
+index e8485fb900b25e911a858678a833852731cb2ace..d307fa88eee70c1653592e67b58934d9a5ab5de1 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -22,6 +22,7 @@ import java.util.UUID;
@@ -24,7 +24,7 @@ index dd80b900f707e81182825a8cefbbdde7b61785fc..4e0be501d9f4bc244b0222df42b210b7
  // CraftBukkit end
  
  public abstract class Entity implements Nameable, EntityAccess, CommandSource {
-@@ -3513,14 +3515,18 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -3510,14 +3512,18 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      }
  
      @Nullable
@@ -45,7 +45,7 @@ index dd80b900f707e81182825a8cefbbdde7b61785fc..4e0be501d9f4bc244b0222df42b210b7
          if (this.level() instanceof ServerLevel && !this.isRemoved()) {
              this.level().getProfiler().push("changeDimension");
              // CraftBukkit start
-@@ -3595,6 +3601,14 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -3597,6 +3603,14 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          } else {
              return null;
          }
