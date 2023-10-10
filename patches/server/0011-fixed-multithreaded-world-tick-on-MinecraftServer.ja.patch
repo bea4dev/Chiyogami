@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 10 Oct 2023 23:19:10 +0900
+Subject: [PATCH] fixed multithreaded world tick on MinecraftServer.java
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 60d66fef93399259f3eaad8fbbfa730efee5da5f..d954196a35cc30fefd1775424104ee3058b3af5c 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1462,7 +1462,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+     }
+ 
++    private static BooleanSupplier shouldKeepTickingTemp;
+     public void tickChildren(BooleanSupplier shouldKeepTicking) {
++        shouldKeepTickingTemp = shouldKeepTicking;
+         this.getPlayerList().getPlayers().forEach((entityplayer) -> {
+             entityplayer.connection.suspendFlushing();
+         });
+@@ -1521,18 +1523,25 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Paper end
+         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
+ 
++        co.aikar.timings.TimingHandler.initializeWorldTiming(); // Chiyogami
++
+         this.isIteratingOverLevels = true; // Paper
+         Iterator iterator = this.getAllLevels().iterator(); // Paper - move down
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
++
++            world.chiyogami.thread.WorldThread worldThread = worldserver.worldThread;
++            if (worldThread.getWorldTickRunnable() == null) {
++            worldThread.setWorldTickRunnable(() -> {
++            worldserver.thread = Thread.currentThread();
+             worldserver.updateLagCompensationTick(); // Paper - lag compensation
+             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
+             worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+-
++            /*
+             this.profiler.push(() -> {
+                 return worldserver + " " + worldserver.dimension().location();
+-            });
++            });*/
+             /* Drop global time updates
+             if (this.tickCount % 20 == 0) {
+                 this.profiler.push("timeSync");
+@@ -1541,11 +1550,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+             // CraftBukkit end */
+ 
+-            this.profiler.push("tick");
++            //this.profiler.push("tick");
+ 
+             try {
++                // Chiyogami - tick on world thread
++                /*
+                 worldserver.timings.doTick.startTiming(); // Spigot
+                 worldserver.tick(shouldKeepTicking);
++                */
++                ((co.aikar.timings.TimingHandler.WorldTiming) worldserver.timings.doTick).startTiming(true); // Spigot // Chiyogami
++                worldserver.tick(shouldKeepTickingTemp);
+                 // Paper start
+                 for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
+                     regionManager.recalculateRegions();
+@@ -1567,10 +1581,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 throw new ReportedException(crashreport);
+             }
+ 
++            /*
+             this.profiler.pop();
+             this.profiler.pop();
++            */
+             worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
++            });}
+         }
++        world.chiyogami.thread.WorldThreadPool.doTick(this.levels.values()); // Chiyogami
++        co.aikar.timings.TimingHandler.clearWorldTimings(); //Chiyogami
+         this.isIteratingOverLevels = false; // Paper
+ 
+         this.profiler.popPush("connection");
+@@ -2771,6 +2790,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     public final void executeMidTickTasks() {
++        if (!Bukkit.isMainThread()) return;
+         org.spigotmc.AsyncCatcher.catchOp("mid tick chunk task execution");
+         long startTime = System.nanoTime();
+         if ((startTime - lastMidTickExecute) <= CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME || (startTime - lastMidTickExecuteFailure) <= TASK_EXECUTION_FAILURE_BACKOFF) {

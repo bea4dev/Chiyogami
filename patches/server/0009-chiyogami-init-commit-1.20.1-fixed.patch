@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 13 Jun 2023 22:28:27 +0900
+Subject: [PATCH] chiyogami-init-commit-1.20.1-fixed
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index f20ae9153b7098980ce6c0e75fcbbb4da652661b..8dd7148eff3cd8ff9539f6d5b662d9208c788acf 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -300,7 +300,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     protected int boardingCooldown;
+     @Nullable
+     private Entity vehicle;
+-    private Level level;
++    public Level level;
+     public double xo;
+     public double yo;
+     public double zo;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 3fdcec16d76db198d3c21fed086122e7823c6c94..89ae9b8b13e2ba7f76bf9e0c3236040679b3968d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -256,12 +256,14 @@ import org.bukkit.scoreboard.Criteria;
+ import org.bukkit.structure.StructureManager;
+ import org.bukkit.util.StringUtil;
+ import org.bukkit.util.permissions.DefaultPermissions;
++import org.spigotmc.AsyncCatcher;
+ import org.yaml.snakeyaml.LoaderOptions;
+ import org.yaml.snakeyaml.Yaml;
+ import org.yaml.snakeyaml.constructor.SafeConstructor;
+ import org.yaml.snakeyaml.error.MarkedYAMLException;
+ 
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
++import world.chiyogami.thread.WorldThreadPool;
+ 
+ import javax.annotation.Nullable; // Paper
+ import javax.annotation.Nonnull; // Paper
+@@ -2353,8 +2355,19 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean isPrimaryThread() {
+-        return io.papermc.paper.util.TickThread.isTickThread(); // Paper - rewrite chunk system
++        return !AsyncCatcher.isAsync(); // Paper - rewrite chunk system // Chiyogami - thread
+     }
++    // Chiyogami start - thread
++    @Override
++    public boolean isMainThread() {
++        return AsyncCatcher.isMainThread();
++    }
++
++    @Override
++    public boolean isWorldThread() {
++        return WorldThreadPool.isWorldThread();
++    }
++    // Chiyogami end
+ 
+     // Paper start - Adventure
+     @Override

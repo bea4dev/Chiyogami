@@ -1,0 +1,194 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Mon, 12 Jun 2023 17:49:25 +0900
+Subject: [PATCH] chiyogami-init-commit-0
+
+
+diff --git a/src/main/java/world/chiyogami/thread/ConcurrentTaskHandler.java b/src/main/java/world/chiyogami/thread/ConcurrentTaskHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb918bd7e4f689f85abd4b8d30f49f71a95ed0ad
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/ConcurrentTaskHandler.java
+@@ -0,0 +1,52 @@
++package world.chiyogami.thread;
++
++import org.bukkit.World;
++import java.util.function.Supplier;
++
++/**
++ * Task utility class for safe operation on worlds from other threads.
++ */
++public abstract class ConcurrentTaskHandler {
++    
++    protected static ConcurrentTaskHandler INSTANCE = null;
++    
++    /**
++     * Performs tasks to the target world in a thread-safe and non-delayed manner.
++     * <p>
++     * When accessing from a thread other than the main thread. Typically, a latency of 50 ms or less is incurred.
++     * <p>
++     * <b>This method only guarantees thread-safety for operations on worlds,
++     * not for global variables or methods (e.g. Bukkit.createInventory();).</b>
++     *
++     * @param targetWorld The world in which the task is to be performed.
++     * @param task Supplier task.
++     * @return Result of supplier.
++     */
++    public static <T> T runConcurrentTaskForWorld(World targetWorld, Supplier<T> task) {
++        return INSTANCE.runConcurrentTaskForWorldImpl(targetWorld, task);
++    }
++    
++    /**
++     * Performs tasks to the target world in a thread-safe and non-delayed manner.
++     * <p>
++     * When accessing from a thread other than the main thread. Typically, a latency of 50 ms or less is incurred.
++     * <p>
++     * <b>This method only guarantees thread-safety for operations on worlds,
++     * not for global variables or methods (e.g. Bukkit.createInventory();).</b>
++     *
++     * @param targetWorld The world in which the task is to be performed.
++     * @param runnable Runnable task.
++     */
++    public static void runConcurrentTaskForWorld(World targetWorld, Runnable runnable) {
++        INSTANCE.runConcurrentTaskForWorldImpl(targetWorld, () -> {
++            runnable.run();
++            return null;
++        });
++    }
++    
++    
++    protected ConcurrentTaskHandler(){INSTANCE = this;}
++    
++    protected abstract <T> T runConcurrentTaskForWorldImpl(World targetWorld, Supplier<T> supplier);
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThreadLockHandler.java b/src/main/java/world/chiyogami/thread/WorldThreadLockHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b3c5d30fe0fe3457cb8c533906373a66e00a7508
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThreadLockHandler.java
+@@ -0,0 +1,14 @@
++package world.chiyogami.thread;
++
++abstract class WorldThreadLockHandler {
++    
++    public static WorldThreadLockHandler INSTANCE;
++    
++    
++    protected WorldThreadLockHandler() {INSTANCE = this;}
++    
++    public abstract void lock(WorldThreadSafeLock worldThreadSafeLock);
++    
++    public abstract void unlock(WorldThreadSafeLock worldThreadSafeLock);
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThreadRunnable.java b/src/main/java/world/chiyogami/thread/WorldThreadRunnable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1694e1e7cb34b47a7165910672d04054a310b9ab
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThreadRunnable.java
+@@ -0,0 +1,53 @@
++package world.chiyogami.thread;
++
++import org.bukkit.World;
++import org.jetbrains.annotations.NotNull;
++
++public abstract class WorldThreadRunnable implements Runnable {
++    
++    private World world = null;
++    
++    private long period = 0;
++    
++    private long delay = 0;
++    
++    private boolean canceled = false;
++    
++    private boolean scheduled = false;
++    
++    public World getWorld() {return world;}
++    
++    public long getPeriod() {return period;}
++    
++    public long getDelay() {return delay;}
++    
++    public synchronized boolean isCanceled() {return canceled;}
++    
++    public synchronized void cancel() {this.canceled = true;}
++    
++    public synchronized void runTask(@NotNull World world) {
++        checkScheduled();
++        this.world = world;
++        scheduled = true;
++        world.scheduleTask(this);
++    }
++    
++    public synchronized void runTaskLater(@NotNull World world, long delay) {
++        checkScheduled();
++        this.world = world;
++        this.delay = delay;
++        scheduled = true;
++        world.scheduleTask(this, delay);
++    }
++    
++    public synchronized void runTaskTimer(@NotNull World world, long delay, long period) {
++        checkScheduled();
++        this.world = world;
++        this.delay = delay;
++        this.period = period;
++        scheduled = true;
++        world.scheduleTask(this, delay, period);
++    }
++    
++    private void checkScheduled() {if (scheduled) throw new IllegalStateException("This task is already scheduled.");}
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThreadSafeLock.java b/src/main/java/world/chiyogami/thread/WorldThreadSafeLock.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f6874f7bc6ac933453230307176eaafb6ff67fd0
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThreadSafeLock.java
+@@ -0,0 +1,45 @@
++package world.chiyogami.thread;
++
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.locks.ReentrantLock;
++
++/**
++ * ReentrantLock for acquiring locks while avoiding deadlocks in the world thread.
++ */
++public class WorldThreadSafeLock extends ReentrantLock {
++    
++    public WorldThreadSafeLock(boolean fair) {
++        super(fair);
++    }
++    
++    @Override
++    public void lock() {
++        WorldThreadLockHandler.INSTANCE.lock(this);
++        super.lock();
++    }
++    
++    @Override
++    public void unlock() {
++        super.unlock();
++        WorldThreadLockHandler.INSTANCE.unlock(this);
++    }
++    
++    @Override
++    public boolean tryLock() {
++        boolean already = super.tryLock();
++        if (already) {
++            WorldThreadLockHandler.INSTANCE.lock(this);
++        }
++        return already;
++    }
++    
++    @Override
++    public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
++        boolean already = super.tryLock(timeout, unit);
++        if (already) {
++            WorldThreadLockHandler.INSTANCE.lock(this);
++        }
++        return already;
++    }
++    
++}

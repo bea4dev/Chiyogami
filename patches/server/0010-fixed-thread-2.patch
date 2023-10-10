@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Mon, 9 Oct 2023 03:57:57 +0900
+Subject: [PATCH] fixed thread 2
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 89ae9b8b13e2ba7f76bf9e0c3236040679b3968d..2aef0750a2d46ebeb28ee12a253e63e7cb990bf3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -401,6 +401,10 @@ public final class CraftServer implements Server {
+         this.dataPackManager = new CraftDataPackManager(this.getServer().getPackRepository());
+ 
+         Bukkit.setServer(this);
++        // Chiyogami start - thread
++        new world.chiyogami.thread.ImplConcurrentTaskHandler();
++        new world.chiyogami.thread.ImplWorldThreadLockHandler();
++        // Chiyogami end
+ 
+         CraftRegistry.setMinecraftRegistry(console.registryAccess());
+ 

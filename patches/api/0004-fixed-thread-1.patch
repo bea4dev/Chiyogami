@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Mon, 9 Oct 2023 04:02:38 +0900
+Subject: [PATCH] fixed thread 1
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index f78b5fd3c3347d28da58777bff88903d2eb140f6..833dd1d3507bf1058a7e231d55148d05f9b9b5e8 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1904,6 +1904,29 @@ public final class Bukkit {
+     public static boolean isPrimaryThread() {
+         return server.isPrimaryThread();
+     }
++    // Chiyogami start - thread
++    /**
++     * Checks if the current thread is the main thread.
++     * <p>
++     * If the current thread is a world thread, it is treated as not being the main thread.
++     *
++     * @return true if the current thread is the main thread,
++     *     false otherwise
++     */
++    public static boolean isMainThread(){
++        return server.isMainThread();
++    }
++
++    /**
++     * Checks if the current thread is a world thread.
++     *
++     * @return true if the current thread is a world thread,
++     *     false otherwise
++     */
++    public static boolean isWorldThread(){
++        return server.isWorldThread();
++    }
++    // Chiyogami end
+ 
+     // Paper start
+     /**
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 8d8fe04e6b09d2a5b1cc05002073df5c58cdcb96..4af22e8a859b616c12d778700076f611742f7532 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1623,6 +1623,25 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *     false otherwise
+      */
+     boolean isPrimaryThread();
++    // Chiyogami start
++    /**
++     * Checks if the current thread is the main thread.
++     * <p>
++     * If the current thread is a world thread, it is treated as not being the main thread.
++     *
++     * @return true if the current thread is the main thread,
++     *     false otherwise
++     */
++    boolean isMainThread();
++
++    /**
++     * Checks if the current thread is a world thread.
++     *
++     * @return true if the current thread is a world thread,
++     *     false otherwise
++     */
++    boolean isWorldThread();
++    // Chiyogami end
+ 
+     // Paper start
+     /**
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index da524a71af74b02515b037f7fe09ba6988e2c8bf..47e3291accaec4655922ca9ec63b21723e6782ee 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -3926,6 +3926,31 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      */
+     void setSendViewDistance(int viewDistance);
+     // Paper end - view distance api
++    // Chiyogami start - thread
++    /**
++     * Schedules a task to the thread executing this world.
++     *
++     * @param runnable Tasks in runnable.
++     */
++    default void scheduleTask(Runnable runnable){scheduleTask(runnable, 0, 0);}
++
++    /**
++     * Schedules a task to the thread executing this world.
++     *
++     * @param runnable Tasks in runnable.
++     * @param delay Delay in executing a task.
++     */
++    default void scheduleTask(Runnable runnable, long delay){scheduleTask(runnable, 0, delay);}
++
++    /**
++     * Schedules a task to the thread executing this world.
++     *
++     * @param runnable Tasks in runnable.
++     * @param delay Delay in executing a task.
++     * @param period The interval at which the task is to be executed.
++     */
++    void scheduleTask(Runnable runnable, long delay, long period);
++    // Chiyogami end
+ 
+     // Spigot start
+     /**

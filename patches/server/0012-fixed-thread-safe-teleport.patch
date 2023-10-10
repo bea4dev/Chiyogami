@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 10 Oct 2023 23:25:34 +0900
+Subject: [PATCH] fixed thread safe teleport
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 8dd7148eff3cd8ff9539f6d5b662d9208c788acf..62b383909ad6ef97b546075f872397e84ec495c3 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3560,14 +3560,18 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     }
+ 
+     @Nullable
+-    public Entity teleportTo(ServerLevel worldserver, Vec3 location) {
++    public Entity teleportTo(ServerLevel serverLevel, Vec3 location) { // Chiyogami - thread safe teleport
+         // CraftBukkit end
+         // Paper start - fix bad state entities causing dupes
+         if (!this.isAlive() || !this.valid) {
+-            LOGGER.warn("Illegal Entity Teleport " + this + " to " + worldserver + ":" + location, new Throwable());
++            LOGGER.warn("Illegal Entity Teleport " + this + " to " + serverLevel + ":" + location, new Throwable()); // Chiyogami - thread safe teleport
+             return null;
+         }
+         // Paper end
++        // Chiyogami start - thread safe teleport
++        java.util.function.Supplier<Entity> teleportTask = () -> {
++        ServerLevel worldserver = serverLevel;
++        // Chiyogami end
+         if (this.level() instanceof ServerLevel && !this.isRemoved()) {
+             this.level().getProfiler().push("changeDimension");
+             // CraftBukkit start
+@@ -3647,6 +3651,14 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         } else {
+             return null;
+         }
++        // Chiyogami start - thread safe teleport
++        };
++        if (serverLevel == this.level) {
++            return teleportTask.get();
++        } else {
++            return this.level.worldThread.runWorldTaskThreadSafely(serverLevel.worldThread, new world.chiyogami.thread.WorldTask<>(teleportTask), "NMS Entity teleport.");
++        }
++        // Chiyogami end
+     }
+ 
+     protected void removeAfterChangingDimensions() {

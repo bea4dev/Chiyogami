@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 10 Oct 2023 23:46:24 +0900
+Subject: [PATCH] fixed parallel bridge
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8bd243a8d5a4be54f907af2b02e96ea833cee62f..f0f8694117f7bae1233d20f51dba6f1ed10bc3b1 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -291,6 +291,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     private final FutureChain chatMessageChain;
+     private boolean waitingForSwitchToConfig;
+     private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper
++    @Nullable public world.chiyogami.bridge.ParallelEntityMoveHandler parallelEntityMoveHandler = null; // Chiyogami - VanillaSource parallel bridge
+ 
+     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie clientData) {
+         super(server, connection, clientData, player); // CraftBukkit
+@@ -591,7 +592,19 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                     // note: only call after setLocation, or else getBoundingBox is wrong
+                     AABB newBox = entity.getBoundingBox();
+                     if (didCollide || !oldBox.equals(newBox)) {
++                        // Chiyogami start - VanillaSource parallel bridge
++                        /*
+                         teleportBack = this.hasNewCollision(worldserver, entity, oldBox, newBox);
++                        */
++                        world.chiyogami.bridge.ParallelEntityMoveHandler moveHandler = this.parallelEntityMoveHandler;
++                        if (moveHandler != null) {
++                            org.bukkit.util.BoundingBox boundingBox = new org.bukkit.util.BoundingBox(oldBox.minX, oldBox.minY, oldBox.minZ, oldBox.maxX, oldBox.maxY, oldBox.maxZ);
++                            org.bukkit.util.Vector movement = new org.bukkit.util.Vector(toX - fromX, toY - fromY, toZ - fromZ);
++                            teleportBack = moveHandler.tryToMoveBoundingBox(boundingBox, movement);
++                        } else {
++                            teleportBack = this.hasNewCollision(worldserver, entity, oldBox, newBox);
++                        }
++                        // Chiyogami end
+                     } // else: no collision at all detected, why do we care?
+                 }
+                 if (teleportBack) { // Paper end - optimise out extra getCubes
+@@ -1480,7 +1493,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                 AABB newBox = this.player.getBoundingBox();
+                                 if (didCollide || !axisalignedbb.equals(newBox)) {
+                                     // note: only call after setLocation, or else getBoundingBox is wrong
++                                    // Chiyogami start - VanillaSource parallel bridge
++                                    /*
+                                     teleportBack = this.hasNewCollision(worldserver, this.player, axisalignedbb, newBox);
++                                    */
++                                    //teleportBack = this.hasNewCollision(worldserver, this.player, axisalignedbb, newBox);
++                                    world.chiyogami.bridge.ParallelEntityMoveHandler moveHandler = this.parallelEntityMoveHandler;
++                                    if (moveHandler != null) {
++                                        org.bukkit.util.BoundingBox boundingBox = new org.bukkit.util.BoundingBox(axisalignedbb.minX, axisalignedbb.minY, axisalignedbb.minZ, axisalignedbb.maxX, axisalignedbb.maxY, axisalignedbb.maxZ);
++                                        org.bukkit.util.Vector movement = new org.bukkit.util.Vector(currDeltaX, currDeltaY, currDeltaZ);
++                                        teleportBack = moveHandler.tryToMoveBoundingBox(boundingBox, movement);
++                                    } else {
++                                        teleportBack = this.hasNewCollision(worldserver, this.player, axisalignedbb, newBox);
++                                    }
++                                    // Chiyogami end
+                                     // Paper start - Add fail move event
+                                     if (teleportBack) {
+                                         io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 48d1444fbad1c57738807d0128b94160a5a17a4d..09096c0ca89946dbe1502eab2471d5b1fd42f19b 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -296,6 +296,7 @@ public abstract class PlayerList {
+         ichatmutablecomponent.withStyle(ChatFormatting.YELLOW);
+         Component joinMessage = ichatmutablecomponent; // Paper - Adventure
+ 
++        playerconnection.parallelEntityMoveHandler = world.chiyogami.bridge.ParallelBridge.getParallelEntityMoveHandler(player.getBukkitEntity()); // Chiyogami - VanillaSource parallel bridge
+         playerconnection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+         ServerStatus serverping = this.server.getStatus();
+ 

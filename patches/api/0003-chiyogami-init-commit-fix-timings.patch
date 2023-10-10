@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 13 Jun 2023 10:18:51 +0900
+Subject: [PATCH] chiyogami-init-commit-fix-timings
+
+
+diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
+index e801e79fa57c44b2e5d359647c920f88064826f1..d69a91090c38b18efcbce44bb2435ae9ca25fbd0 100644
+--- a/src/main/java/co/aikar/timings/TimingsCommand.java
++++ b/src/main/java/co/aikar/timings/TimingsCommand.java
+@@ -55,7 +55,7 @@ public class TimingsCommand extends BukkitCommand {
+             return true;
+         }
+         if (false) {
+-            sender.sendMessage(Timings.deprecationMessage());
++            //sender.sendMessage(Timings.deprecationMessage());
+         }
+         if (args.length < 1) {
+             sender.sendMessage(text("Usage: " + this.usageMessage, NamedTextColor.RED));

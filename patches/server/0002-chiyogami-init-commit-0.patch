@@ -1,0 +1,665 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Mon, 12 Jun 2023 17:49:25 +0900
+Subject: [PATCH] chiyogami-init-commit-0
+
+
+diff --git a/src/main/java/world/chiyogami/bridge/ParallelBridge.java b/src/main/java/world/chiyogami/bridge/ParallelBridge.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..98fb8adae48085586068f6c7ef056857cf8a9b31
+--- /dev/null
++++ b/src/main/java/world/chiyogami/bridge/ParallelBridge.java
+@@ -0,0 +1,21 @@
++package world.chiyogami.bridge;
++
++import org.bukkit.entity.Player;
++
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++
++public class ParallelBridge {
++    
++    public static boolean parallelWorldBridge = false;
++    
++    private static final Map<Player, ParallelEntityMoveHandler> parallelEntityMoveHandlerMap = new ConcurrentHashMap<>();
++    
++    public static ParallelEntityMoveHandler getParallelEntityMoveHandler(Player player){
++        if(!parallelWorldBridge) return null;
++        return parallelEntityMoveHandlerMap.computeIfAbsent(player, ParallelEntityMoveHandler::new);
++    }
++    
++    public static void removeParallelEntityMoveHandler(Player player){parallelEntityMoveHandlerMap.remove(player);}
++    
++}
+diff --git a/src/main/java/world/chiyogami/bridge/ParallelEntityMoveHandler.java b/src/main/java/world/chiyogami/bridge/ParallelEntityMoveHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5e2e8630ffa8f73b5bcf6144eb79fd1095b3f11d
+--- /dev/null
++++ b/src/main/java/world/chiyogami/bridge/ParallelEntityMoveHandler.java
+@@ -0,0 +1,24 @@
++package world.chiyogami.bridge;
++
++import org.bukkit.entity.Player;
++import org.bukkit.util.BoundingBox;
++import org.bukkit.util.Vector;
++
++import java.util.AbstractMap;
++import java.util.Map;
++import java.util.function.Function;
++
++public class ParallelEntityMoveHandler {
++    
++    private final Player player;
++    
++    public Function<Map.Entry<BoundingBox, Vector>, Boolean> tryToMoveFunction = null;
++    
++    public ParallelEntityMoveHandler(Player player){this.player = player;}
++    
++    public boolean tryToMoveBoundingBox(BoundingBox boundingBox, Vector movement) {
++        return tryToMoveFunction.apply(new AbstractMap.SimpleEntry<>(boundingBox, movement));
++    }
++    
++}
++
+diff --git a/src/main/java/world/chiyogami/config/ChiyogamiConfig.java b/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5b905dfe18a47166aaa37b31c326fd20a0ccfd1c
+--- /dev/null
++++ b/src/main/java/world/chiyogami/config/ChiyogamiConfig.java
+@@ -0,0 +1,116 @@
++package world.chiyogami.config;
++
++
++import org.bukkit.configuration.file.YamlConfiguration;
++import org.bukkit.plugin.SimplePluginManager;
++import world.chiyogami.log.ChiyogamiLogger;
++import world.chiyogami.thread.WorldThreadPool;
++
++import java.io.File;
++import java.util.ArrayList;
++import java.util.List;
++
++public final class ChiyogamiConfig {
++    
++    private static final int VERSION = 2;
++    
++    private static final List<ConfigComponent<?>> configComponentList = new ArrayList<>();
++    
++    private static final ConfigComponent<Integer> CONFIG_VERSION = new ConfigComponent<>("config-version", VERSION, VERSION);
++    private static final ConfigComponent<Integer> MAX_WORLD_THREADS = new ConfigComponent<>("max-world-threads", 0, 0);
++    private static final ConfigComponent<Boolean> SHOW_CHIYOGAMI_LOG = new ConfigComponent<>("show-detail-log", true, 0);
++    private static final ConfigComponent<Boolean> SYNCHRONIZED_EVENT = new ConfigComponent<>("synchronized-event", true, 1);
++    private static final ConfigComponent<Boolean> PARALLEL_WORLD_BRIDGE = new ConfigComponent<>("parallel-world-bridge", false, 2);
++    
++    
++    private static void setDefaultValues(YamlConfiguration yml){
++        int configVer = 0;
++        if(yml.contains(CONFIG_VERSION.path)) configVer = yml.getInt(CONFIG_VERSION.path);
++        
++        for(ConfigComponent<?> configComponent : configComponentList){
++            String path = configComponent.path;
++            Object defaultValue = configComponent.defaultValue;
++            int componentVer = configComponent.version;
++            
++            if(configVer < componentVer || !yml.contains(path)){
++                yml.set(path, defaultValue);
++            }
++        }
++    }
++    
++    
++    private static void loadValues(YamlConfiguration yml){
++        for(ConfigComponent<?> configComponent : configComponentList){
++            String path = configComponent.path;
++            if(yml.contains(path)){
++                try {
++                    configComponent.setValue(yml.get(path));
++                }catch (Exception e){e.printStackTrace();}
++            }
++        }
++    }
++    
++    
++    private static class ConfigComponent<T>{
++        
++        private final String path;
++        
++        private final T defaultValue;
++        
++        private final int version;
++        
++        private T value = null;
++        
++        private ConfigComponent(String path, T defaultValue, int version){
++            this.path = path;
++            this.defaultValue = defaultValue;
++            this.version = version;
++            configComponentList.add(this);
++        }
++        
++        private void setValue(Object value) {this.value = (T)value;}
++        
++        private T getValue() {
++            if(value != null) return value;
++            return defaultValue;
++        }
++    }
++    
++    
++    
++    
++    public static void load(){
++        try {
++            
++            File file = new File("chiyogami.yml");
++            
++            YamlConfiguration yml;
++            if (file.exists()) {
++                yml = YamlConfiguration.loadConfiguration(file);
++            } else {
++                yml = new YamlConfiguration();
++            }
++            setDefaultValues(yml);
++            yml.save(file);
++            
++            loadValues(yml);
++            
++            //WorkMode.MULTI_THREAD_TICK = MAX_WORLD_THREADS.getValue() != 1;
++            WorldThreadPool.setMaxPoolSize(MAX_WORLD_THREADS.getValue());
++            
++            ChiyogamiLogger.isShowLogs = SHOW_CHIYOGAMI_LOG.getValue();
++            
++            SimplePluginManager.synchronizedEvent = SYNCHRONIZED_EVENT.getValue();
++            
++            //ParallelWorldBridge.parallelWorldBridge = PARALLEL_WORLD_BRIDGE.getValue();
++            
++        }catch (Exception e){e.printStackTrace();}
++    }
++    
++    public static int getMaxWorldThreads() {return MAX_WORLD_THREADS.getValue();}
++    
++    public static boolean isShowLogs() {return SHOW_CHIYOGAMI_LOG.getValue();}
++    
++    public static boolean isSynchronizedEvent(){return SYNCHRONIZED_EVENT.getValue();}
++}
++
+diff --git a/src/main/java/world/chiyogami/log/ChiyogamiLogger.java b/src/main/java/world/chiyogami/log/ChiyogamiLogger.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..20cc1bc1cf14f1bd093b59ff6475516b82662c01
+--- /dev/null
++++ b/src/main/java/world/chiyogami/log/ChiyogamiLogger.java
+@@ -0,0 +1,17 @@
++package world.chiyogami.log;
++
++
++import net.minecraft.server.MinecraftServer;
++
++public class ChiyogamiLogger {
++    
++    public static boolean isShowLogs = true;
++    
++    public static void info(String string){
++        if(!isShowLogs) return;
++        string = "Chiyogami : INFO > " + string;
++        MinecraftServer.LOGGER.info(string);
++    }
++    
++}
++
+diff --git a/src/main/java/world/chiyogami/thread/ImplConcurrentTaskHandler.java b/src/main/java/world/chiyogami/thread/ImplConcurrentTaskHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1082936c93dc52f26df81e534729153e2924758c
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/ImplConcurrentTaskHandler.java
+@@ -0,0 +1,61 @@
++package world.chiyogami.thread;
++
++import org.bukkit.Bukkit;
++import org.bukkit.World;
++import org.bukkit.craftbukkit.CraftWorld;
++
++import java.util.concurrent.ExecutionException;
++import java.util.function.Supplier;
++
++public class ImplConcurrentTaskHandler extends ConcurrentTaskHandler {
++    
++    public ImplConcurrentTaskHandler() {super();}
++    
++    @Override
++    protected <T> T runConcurrentTaskForWorldImpl(World targetWorld, Supplier<T> supplier) {
++        // Main thread
++        if (Bukkit.isMainThread()) {
++            return supplier.get();
++        }
++        
++        WorldTask<T> worldTask = new WorldTask<>(supplier);
++        
++        WorldThread currentWorldThread = WorldThreadPool.getWorldThreadFromCurrentThread();
++        WorldThread targetWorldThread = ((CraftWorld) targetWorld).getHandle().worldThread;
++        
++        // Async thread
++        if (currentWorldThread == null) {
++            try {
++                targetWorldThread.LOCK.lock();
++                if (targetWorldThread.isProcessingWorldTick()) {
++                    targetWorldThread.addWorldTask(worldTask);
++                } else {
++                    worldTask.complete();
++                }
++            } finally {
++                targetWorldThread.LOCK.unlock();
++            }
++            
++            try {
++                return worldTask.get();
++            } catch (InterruptedException | ExecutionException e) {
++                e.printStackTrace();
++                throw new IllegalStateException("Failed to wait for world task.");
++            }
++        }
++        
++        // World thread
++        if (currentWorldThread == targetWorldThread) {
++            worldTask.complete();
++            try {
++                return worldTask.get();
++            } catch (InterruptedException | ExecutionException e) {
++                e.printStackTrace();
++                throw new IllegalStateException("Failed to wait for world task.");
++            }
++        } else {
++            return currentWorldThread.runWorldTaskThreadSafely(targetWorldThread, worldTask, "Internal error.");
++        }
++    }
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/ImplWorldThreadLockHandler.java b/src/main/java/world/chiyogami/thread/ImplWorldThreadLockHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..965f45ee661db1465f7a3d4995a25301fc7476dc
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/ImplWorldThreadLockHandler.java
+@@ -0,0 +1,52 @@
++package world.chiyogami.thread;
++
++import org.bukkit.Bukkit;
++
++public class ImplWorldThreadLockHandler extends WorldThreadLockHandler {
++    
++    public ImplWorldThreadLockHandler() {super();}
++    
++    @Override
++    public void lock(WorldThreadSafeLock worldThreadSafeLock) {
++        //Main thread
++        if (Bukkit.isMainThread()) {
++            return;
++        }
++        
++        WorldThread worldThread = WorldThreadPool.getWorldThreadFromCurrentThread();
++        
++        //Async thread
++        if (worldThread == null) {
++            return;
++        }
++        
++        //World thread
++        worldThread.safeLockCount.addAndGet(1);
++    }
++    
++    @Override
++    public void unlock(WorldThreadSafeLock worldThreadSafeLock) {
++        //Main thread
++        if (Bukkit.isMainThread()) {
++            return;
++        }
++        
++        WorldThread worldThread = WorldThreadPool.getWorldThreadFromCurrentThread();
++        
++        //Async thread
++        if (worldThread == null) {
++            return;
++        }
++        
++        //World thread
++        int lockNest = worldThread.safeLockCount.addAndGet(-1);
++        
++        if (lockNest < 0) {
++            int old = worldThread.safeLockCount.getAndSet(0);
++            throw new IllegalStateException("Lock and unlock counts do not match. \n" +
++                "Excessive unlocking or an internal error may have occurred.\n" +
++                "LockCount : " + old);
++        }
++    }
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldTask.java b/src/main/java/world/chiyogami/thread/WorldTask.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..abcfed510c9143b9c8e8c1487267cb52b4bd2cc2
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldTask.java
+@@ -0,0 +1,16 @@
++package world.chiyogami.thread;
++
++import java.util.concurrent.CompletableFuture;
++import java.util.function.Supplier;
++
++public class WorldTask<T> extends CompletableFuture<T> {
++    
++    private final Supplier<T> task;
++    
++    public WorldTask(Supplier<T> task) {
++        this.task = task;
++    }
++    
++    public void complete(){super.complete(task.get());}
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThread.java b/src/main/java/world/chiyogami/thread/WorldThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9517d26c465f25f68d33355e96cd7f1f73ae3eed
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThread.java
+@@ -0,0 +1,225 @@
++package world.chiyogami.thread;
++
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.level.Level;
++import world.chiyogami.log.ChiyogamiLogger;
++
++import java.util.*;
++import java.util.concurrent.ExecutionException;
++import java.util.concurrent.atomic.AtomicInteger;
++import java.util.concurrent.locks.ReentrantLock;
++
++public class WorldThread implements Runnable {
++    
++    public static final ReentrantLock TASK_SCHEDULING_LOCK = new ReentrantLock(true);
++    
++    
++    private final Level level;
++    
++    private Runnable worldTickRunnable;
++    
++    private final List<WorldTask<?>> worldTasks = new ArrayList<>();
++    
++    private long tick = 0;
++    
++    private WorldThread waitFor = null;
++    
++    private boolean isProcessingWorldTick = false;
++    
++    public final ReentrantLock LOCK = new ReentrantLock(true);
++    
++    private Thread currentThread = Thread.currentThread();
++    
++    private final List<WorldThreadRunnable> scheduledRunnableList = new ArrayList<>();
++    
++    private final Map<WorldThreadRunnable, Long> scheduledDelayRunnableListMap = new HashMap<>();
++    
++    private final Map<WorldThreadRunnable, Long> scheduledTimerRunnableListMap = new HashMap<>();
++    
++    private final ReentrantLock SCHEDULER_LOCK = new ReentrantLock(true);
++    
++    public AtomicInteger safeLockCount = new AtomicInteger();
++    
++    public WorldThread(Level level) {
++        this.level = level;
++    }
++    
++    public Level getLevel() {return level;}
++    
++    public Runnable getWorldTickRunnable() {return worldTickRunnable;}
++    
++    public void setWorldTickRunnable(Runnable worldTickRunnable) {this.worldTickRunnable = worldTickRunnable;}
++    
++    public boolean isProcessingWorldTick() {return isProcessingWorldTick;}
++    
++    public Thread getCurrentThread() {return currentThread;}
++    
++    public void setCurrentThread(Thread currentThread) {this.currentThread = currentThread;}
++    
++    public void addWorldTask(WorldTask<?> worldTask) {worldTasks.add(worldTask);}
++    
++    public void resetAllPluginWorldTasks() {
++        scheduledRunnableList.clear();
++        scheduledDelayRunnableListMap.clear();
++        scheduledTimerRunnableListMap.clear();
++    }
++    
++    public void scheduleWorldThreadRunnable(WorldThreadRunnable runnable) {
++        try {
++            SCHEDULER_LOCK.lock();
++            if (runnable.getDelay() == 0) {
++                if (runnable.getPeriod() == 0) {
++                    scheduledRunnableList.add(runnable);
++                } else {
++                    scheduledTimerRunnableListMap.put(runnable, tick);
++                }
++            } else {
++                scheduledDelayRunnableListMap.put(runnable, runnable.getDelay() + tick);
++            }
++        } finally {
++            SCHEDULER_LOCK.unlock();
++        }
++    }
++    
++    
++    @Override
++    public void run() {
++        tick++;
++        
++        currentThread = Thread.currentThread();
++        WorldThreadPool.addCurrentThreadToWorldThreadHashMap(this);
++        
++        try {
++            LOCK.lock();
++            isProcessingWorldTick = true;
++        } finally {
++            LOCK.unlock();
++        }
++        
++        //Scheduler
++        try {
++            SCHEDULER_LOCK.lock();
++            for (Map.Entry<WorldThreadRunnable, Long> entry : scheduledDelayRunnableListMap.entrySet()) {
++                WorldThreadRunnable runnable = entry.getKey();
++                long tick = entry.getValue();
++                
++                if (this.tick == tick && !runnable.isCanceled()) {
++                    if (runnable.getPeriod() == 0) {
++                        scheduledRunnableList.add(runnable);
++                    } else {
++                        scheduledTimerRunnableListMap.put(runnable, tick);
++                    }
++                }
++            }
++            
++            for (WorldThreadRunnable runnable : scheduledRunnableList) {
++                try {
++                    runnable.run();
++                } catch (Exception e) {
++                    e.printStackTrace();
++                }
++            }
++            
++            for (Map.Entry<WorldThreadRunnable, Long> entry : scheduledTimerRunnableListMap.entrySet()) {
++                WorldThreadRunnable runnable = entry.getKey();
++                long tick = entry.getValue();
++                
++                if ((this.tick - tick) % runnable.getPeriod() == 0) {
++                    try {
++                        runnable.run();
++                    } catch (Exception e) {
++                        e.printStackTrace();
++                    }
++                }
++            }
++            
++            scheduledDelayRunnableListMap.keySet().removeIf(WorldThreadRunnable::isCanceled);
++            scheduledTimerRunnableListMap.keySet().removeIf(WorldThreadRunnable::isCanceled);
++            scheduledRunnableList.clear();
++        } finally {
++            SCHEDULER_LOCK.unlock();
++        }
++        
++        worldTickRunnable.run();
++        
++        try {
++            LOCK.lock();
++            isProcessingWorldTick = false;
++            
++            if (worldTasks.size() == 0) return;
++            
++            for (WorldTask<?> worldTask : worldTasks) {
++                worldTask.complete();
++            }
++            worldTasks.clear();
++        } finally {
++            LOCK.unlock();
++        }
++    }
++    
++    public WorldThread getWaitFor() {return waitFor;}
++    
++    public void catchIllegalThread(String reason){
++        Thread currentThread = Thread.currentThread();
++        
++        if(currentThread == MinecraftServer.getServer().serverThread) return;
++        if(currentThread == this.currentThread) return;
++        
++        throw new IllegalStateException("Chiyogami > Unauthorized concurrent execution to worlds."
++            + System.lineSeparator() + "             World : " + level.getWorld().getName() + "  Reason : " + reason
++            + System.lineSeparator() + "This operation is unacceptable because it can cause serious damage to this server."
++            + System.lineSeparator() + "It has been rejected by Chiyogami, it is not a bug.");
++    }
++    
++    public <T> T runWorldTaskThreadSafely(WorldThread targetWorldThread, WorldTask<T> worldTask, String reason) {
++        this.catchIllegalThread(reason);
++        if (targetWorldThread == null) {
++            throw new IllegalStateException("Failed to wait for world task.");
++        }
++        
++        ChiyogamiLogger.info("Try wait " + level.getWorld().getName() + " -> " + targetWorldThread.level.getWorld().getName());
++        
++        try {
++            TASK_SCHEDULING_LOCK.lock();
++            targetWorldThread.LOCK.lock();
++            
++            //Checks to see if threads waiting to exit are not recursively waiting for themselves.
++            WorldThread waitForThread = targetWorldThread;
++            do {
++                waitForThread = waitForThread.waitFor;
++            } while (waitForThread != null && waitForThread != this);
++            
++            if (waitForThread == null) {
++                if (targetWorldThread.isProcessingWorldTick) {
++                    if (this.safeLockCount.get() != 0) {
++                        throw new IllegalStateException("""
++                            The current thread has already acquired a lock with WorldThreadSafeLock.
++                            In this state, it cannot safely wait for another world's task completion.
++                            This operation cannot be performed because it may cause a deadlock.""");
++                    }
++                    
++                    ChiyogamiLogger.info("Wait for " + level.getWorld().getName() + " -> " + targetWorldThread.level.getWorld().getName());
++                    targetWorldThread.worldTasks.add(worldTask);
++                    this.waitFor = targetWorldThread;
++                } else {
++                    worldTask.complete();
++                }
++            } else {
++                worldTask.complete();
++            }
++        } finally {
++            targetWorldThread.LOCK.unlock();
++            TASK_SCHEDULING_LOCK.unlock();
++        }
++        
++        try {
++            T result = worldTask.get();
++            this.waitFor = null;
++            return result;
++        } catch (InterruptedException | ExecutionException e) {
++            e.printStackTrace();
++            throw new IllegalStateException("Failed to wait for world task.");
++        }
++    }
++    
++}
+diff --git a/src/main/java/world/chiyogami/thread/WorldThreadPool.java b/src/main/java/world/chiyogami/thread/WorldThreadPool.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a7e600159ad42307f06bb87be1d4de4b226a6278
+--- /dev/null
++++ b/src/main/java/world/chiyogami/thread/WorldThreadPool.java
+@@ -0,0 +1,73 @@
++package world.chiyogami.thread;
++
++import net.minecraft.server.level.ServerLevel;
++
++import java.util.*;
++import java.util.concurrent.*;
++import java.util.concurrent.locks.ReentrantLock;
++
++public class WorldThreadPool {
++    
++    private static ExecutorService executorService = null;
++    
++    private static int maxPoolSize = 0;
++    
++    private static int previousPoolSize = 0;
++    
++    public static void setMaxPoolSize(int poolSize) {WorldThreadPool.maxPoolSize = poolSize;}
++    
++    public static Map<Thread, WorldThread> worldThreadHashMap = new HashMap<>();
++    
++    private static final ReentrantLock WORLD_THREAD_HASH_MAP_LOCK = new ReentrantLock(true);
++    
++    public static void addCurrentThreadToWorldThreadHashMap(WorldThread worldThread) {
++        //Copy on write
++        try {
++            WORLD_THREAD_HASH_MAP_LOCK.lock();
++            Thread currentThread = Thread.currentThread();
++            Map<Thread, WorldThread> copy = new HashMap<>(worldThreadHashMap);
++            copy.put(currentThread, worldThread);
++            worldThreadHashMap = copy;
++        } finally {
++            WORLD_THREAD_HASH_MAP_LOCK.unlock();
++        }
++    }
++    
++    public static boolean isWorldThread() {
++        return worldThreadHashMap.containsKey(Thread.currentThread());
++    }
++    
++    public static WorldThread getWorldThreadFromCurrentThread() {return worldThreadHashMap.get(Thread.currentThread());}
++    
++    public static void resetAllPluginWorldTasks() {
++        worldThreadHashMap.values().forEach(WorldThread::resetAllPluginWorldTasks);
++    }
++    
++    
++    public static void shutdown(){if(executorService != null) executorService.shutdown();}
++    
++    public static void doTick(Collection<ServerLevel> serverLevels){
++        int pool = maxPoolSize > 0 ? maxPoolSize : serverLevels.size();
++        
++        if(pool != previousPoolSize){
++            if(executorService != null) executorService.shutdown();
++            executorService = Executors.newFixedThreadPool(pool);
++            previousPoolSize = pool;
++            worldThreadHashMap.clear();
++        }
++        
++        Set<Future<?>> futures = new HashSet<>();
++        for (ServerLevel serverLevel : serverLevels) {
++            Future<?> future = executorService.submit(serverLevel.worldThread);
++            futures.add(future);
++        }
++        
++        for(Future<?> future : futures){
++            try {
++                future.get();
++            } catch (Exception e){e.printStackTrace();}
++        }
++    }
++    
++}
++
