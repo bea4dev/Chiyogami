@@ -14,12 +14,12 @@ index c187641f0ec6444a10e0e1583e1697d07e8f0267..361f8409415a160a1f7030193f9aca95
  dependencies {
 -    implementation(project(":paper-api"))
 -    implementation(project(":paper-mojangapi"))
-+    // ForkTest start
-+    implementation(project(":forktest-api"))
++    // Chiyogami start
++    implementation(project(":chiyogami-api"))
 +    implementation("io.papermc.paper:paper-mojangapi:1.20.2-R0.1-SNAPSHOT") {
 +        exclude("io.papermc.paper", "paper-api")
 +    }
-+    // ForkTest end
++    // Chiyogami end
      // Paper start
      implementation("org.jline:jline-terminal-jansi:3.21.0")
      implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -28,7 +28,7 @@ index c187641f0ec6444a10e0e1583e1697d07e8f0267..361f8409415a160a1f7030193f9aca95
              "Main-Class" to "org.bukkit.craftbukkit.Main",
              "Implementation-Title" to "CraftBukkit",
 -            "Implementation-Version" to "git-Paper-$implementationVersion",
-+            "Implementation-Version" to "git-ForkTest-$implementationVersion", // ForkTest
++            "Implementation-Version" to "git-Chiyogami-$implementationVersion", // Chiyogami
              "Implementation-Vendor" to date, // Paper
              "Specification-Title" to "Bukkit",
              "Specification-Version" to project.version,
@@ -37,7 +37,7 @@ index c187641f0ec6444a10e0e1583e1697d07e8f0267..361f8409415a160a1f7030193f9aca95
      block: JavaExec.() -> Unit
  ): TaskProvider<JavaExec> = register<JavaExec>(name) {
 -    group = "paper"
-+    group = "paperweight" // ForkTest
++    group = "paperweight" // Chiyogami
      mainClass.set("org.bukkit.craftbukkit.Main")
      standardInput = System.`in`
      workingDir = rootProject.layout.projectDirectory
@@ -50,7 +50,7 @@ index 97745f0bab8d82d397c6c2a5775aed92bca0a034..b17a72020615e790d8f81c52774cbfa3
      @DontObfuscate
      public String getServerModName() {
 -        return "Paper"; // Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
-+        return "ForkTest"; // ForkTest - ForkTest > // Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
++        return "Chiyogami"; // Chiyogami - Chiyogami > // Paper - Paper > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
@@ -63,7 +63,7 @@ index b7e7e6ed60f55d2ab5e4fcefb3638ad1768c3b7f..904c7ce28c54a6628874c0a18ded9bf1
  
  public final class CraftServer implements Server {
 -    private final String serverName = "Paper"; // Paper
-+    private final String serverName = "ForkTest"; // ForkTest // Paper
++    private final String serverName = "Chiyogami"; // Chiyogami // Paper
      private final String serverVersion;
      private final String bukkitVersion = Versioning.getBukkitVersion();
      private final Logger logger = Logger.getLogger("Minecraft");
@@ -76,7 +76,7 @@ index 774556a62eb240da42e84db4502e2ed43495be17..21f39bd0c33ef2635249298e6a247afb
          String result = "Unknown-Version";
  
 -        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/io.papermc.paper/paper-api/pom.properties");
-+        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/com.example.paperfork/forktest-api/pom.properties"); // ForkTest
++        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/com.github.bea4dev/chiyogami-api/pom.properties"); // Chiyogami
          Properties properties = new Properties();
  
          if (stream != null) {
