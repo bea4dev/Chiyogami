@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 29 Apr 2025 01:33:00 +0900
+Subject: [PATCH] add world threading
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index f1373fd5fdebb9f4600ba7f32a5df6188de3a0e9..a445b59b645d0e733702a784967a84224e1505ac 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1703,6 +1703,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
+         for (ServerLevel serverLevel : this.getAllLevels()) {
++            // Chiyogami start - world threading
++            world.chiyogami.thread.WorldThread worldThread = serverLevel.worldThread;
++            if (worldThread.getWorldTickRunnable() == null) {
++            worldThread.setWorldTickRunnable(() -> {
++            serverLevel.thread = Thread.currentThread();
++            // Chiyogami end
+             serverLevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
+             serverLevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
+             serverLevel.updateLagCompensationTick(); // Paper - lag compensation
+@@ -1729,7 +1735,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             profilerFiller.pop();
+             profilerFiller.pop();
+             serverLevel.explosionDensityCache.clear(); // Paper - Optimize explosions
++            });} // Chiyogami - world threading
+         }
++        world.chiyogami.thread.WorldThreadPool.doTick(this.levels.values()); // Chiyogami - world threading
+         this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
+ 
+         profilerFiller.popPush("connection");
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 013ed7dbe2309f562f63e66203179a90566e8115..d202b39d941230961e5dba09122c087da0164098 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -92,6 +92,7 @@ import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.block.CraftBlockState;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ import org.bukkit.entity.SpawnCategory;
++import world.chiyogami.thread.WorldThread;
+ // CraftBukkit end
+ 
+ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel, ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemEntityGetter { // Paper - rewrite chunk system // Paper - optimise collisions
+@@ -110,7 +111,10 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     protected final NeighborUpdater neighborUpdater;
+     private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
+     private boolean tickingBlockEntities;
+-    public final Thread thread;
++    // Chiyogami start - world threading
++    public Thread thread;
++    public WorldThread worldThread;
++    // Chiyogami end
+     private final boolean isDebug;
+     private int skyDarken;
+     protected int randValue = RandomSource.create().nextInt();

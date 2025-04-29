@@ -1,7 +1,0 @@
---- a/com/google/common/annotations/Beta.java
-+++ b/com/google/common/annotations/Beta.java
-@@ -44,3 +_,4 @@
- @Documented
- @GwtCompatible
- public @interface Beta {}
-+// comment
