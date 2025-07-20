@@ -30,14 +30,14 @@
  }
 @@ -166,7 +178,7 @@ val services = objects.newInstance<Services>()
  
- tasks.withType<Javadoc> {
+ tasks.withType<Javadoc>().configureEach {
      val options = options as StandardJavadocDocletOptions
 -    options.overview = "src/main/javadoc/overview.html"
 +    options.overview = "../paper-api/src/main/javadoc/overview.html"
      options.use()
      options.isDocFilesSubDirs = true
      options.links(
-@@ -199,11 +211,11 @@ tasks.withType<Javadoc> {
+@@ -199,11 +211,11 @@ tasks.withType<Javadoc>().configureEach {
      }
  
      // workaround for https://github.com/gradle/gradle/issues/4046

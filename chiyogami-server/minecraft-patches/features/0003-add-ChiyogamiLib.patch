@@ -5,10 +5,10 @@ Subject: [PATCH] add ChiyogamiLib
 
 
 diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
-index 9c9b601a3f903bebb0dd1bda0e24745587229727..d35f650973cfbf6219f42b481c07855087407a0a 100644
+index fd3553bdc1c3cdbf6aa3dc00e0a4987f8eaa4fb8..d4c94ef519e30d89d1976fba5ed09c7b7cfffefb 100644
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -69,6 +69,7 @@ public class Main {
+@@ -70,6 +70,7 @@ public class Main {
      @DontObfuscate
      public static void main(final OptionSet optionSet) { // CraftBukkit - replaces main(String[] args)
          io.papermc.paper.util.LogManagerShutdownThread.hook(); // Paper - Improved watchdog support
@@ -17,10 +17,10 @@ index 9c9b601a3f903bebb0dd1bda0e24745587229727..d35f650973cfbf6219f42b481c078550
          /* CraftBukkit start - Replace everything
          OptionParser optionParser = new OptionParser();
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index a445b59b645d0e733702a784967a84224e1505ac..cf5c06b32a769d108cc1fae8a8cd976c22cac495 100644
+index 940955989480646ce323588bd73eff1aab2f321e..57161fa7e0d70ab0855bfd4802525141667b6048 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -355,6 +355,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -357,6 +357,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
      public final void moonrise$executeMidTickTasks() {
@@ -28,7 +28,7 @@ index a445b59b645d0e733702a784967a84224e1505ac..cf5c06b32a769d108cc1fae8a8cd976c
          final long startTime = System.nanoTime();
          if ((startTime - this.lastMidTickExecute) <= CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME || (startTime - this.lastMidTickExecuteFailure) <= TASK_EXECUTION_FAILURE_BACKOFF) {
              // it's shown to be bad to constantly hit the queue (chunk loads slow to a crawl), even if no tasks are executed.
-@@ -1578,6 +1579,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1581,6 +1582,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper end - Add tick times API and /mspt command
          this.logTickMethodTime(nanos);
          profilerFiller.pop();
@@ -36,7 +36,7 @@ index a445b59b645d0e733702a784967a84224e1505ac..cf5c06b32a769d108cc1fae8a8cd976c
      }
  
      private void autoSave() {
-@@ -1702,6 +1704,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1704,6 +1706,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
          this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
@@ -44,7 +44,7 @@ index a445b59b645d0e733702a784967a84224e1505ac..cf5c06b32a769d108cc1fae8a8cd976c
          for (ServerLevel serverLevel : this.getAllLevels()) {
              // Chiyogami start - world threading
              world.chiyogami.thread.WorldThread worldThread = serverLevel.worldThread;
-@@ -1709,6 +1712,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1711,6 +1714,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              worldThread.setWorldTickRunnable(() -> {
              serverLevel.thread = Thread.currentThread();
              // Chiyogami end
@@ -55,7 +55,7 @@ index a445b59b645d0e733702a784967a84224e1505ac..cf5c06b32a769d108cc1fae8a8cd976c
              serverLevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
              serverLevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
              serverLevel.updateLagCompensationTick(); // Paper - lag compensation
-@@ -1735,6 +1742,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1737,6 +1744,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              profilerFiller.pop();
              profilerFiller.pop();
              serverLevel.explosionDensityCache.clear(); // Paper - Optimize explosions

@@ -8,8 +8,8 @@ Chiyogamiは [Paper](https://github.com/PaperMC/Paper) をフォークしたも�
 
 Other versions
 ------
+* [1.21.5](https://github.com/bea4dev/Chiyogami/tree/ver/1.21.5)
 * [1.21.1](https://github.com/bea4dev/Chiyogami/tree/ver/1.21.1)
-* [1.21](https://github.com/bea4dev/Chiyogami/tree/ver/1.21)
 
 Notes
 ------
@@ -28,7 +28,7 @@ How to build
 
 1. リポジトリを [ダウンロード](https://codeload.github.com/bea4dev/Chiyogami/zip/refs/heads/ver/1.21) or clone して解凍します。
 2. 解凍したフォルダ内でWindowsの場合はgit-bash、linux or Macの場合はターミナルを開き```./gradlew applyAllPatches```を実行したあと```./gradlew createMojmapBundlerJar```を実行します
-3. ```build/libs```内にjarファイルが生成されていれば成功です
+3. ```chiyogami-server/build/libs```内にjarファイルが生成されていれば成功です
 
 For developer
 ------

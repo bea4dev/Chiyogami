@@ -5,10 +5,10 @@ Subject: [PATCH] add world threading
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index f1373fd5fdebb9f4600ba7f32a5df6188de3a0e9..a445b59b645d0e733702a784967a84224e1505ac 100644
+index 7aac2a6889af3edaebfaf94deecbf00d00758b68..940955989480646ce323588bd73eff1aab2f321e 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -1703,6 +1703,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1705,6 +1705,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
          for (ServerLevel serverLevel : this.getAllLevels()) {
@@ -21,7 +21,7 @@ index f1373fd5fdebb9f4600ba7f32a5df6188de3a0e9..a445b59b645d0e733702a784967a8422
              serverLevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
              serverLevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
              serverLevel.updateLagCompensationTick(); // Paper - lag compensation
-@@ -1729,7 +1735,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1731,7 +1737,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              profilerFiller.pop();
              profilerFiller.pop();
              serverLevel.explosionDensityCache.clear(); // Paper - Optimize explosions
@@ -32,7 +32,7 @@ index f1373fd5fdebb9f4600ba7f32a5df6188de3a0e9..a445b59b645d0e733702a784967a8422
  
          profilerFiller.popPush("connection");
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 013ed7dbe2309f562f63e66203179a90566e8115..d202b39d941230961e5dba09122c087da0164098 100644
+index c41df4b1fff1f65532256e835dc30fadbb4f8c8b..5f3ee846f7b63efba0c47dce17356f5b9d026d28 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -92,6 +92,7 @@ import org.bukkit.craftbukkit.CraftWorld;

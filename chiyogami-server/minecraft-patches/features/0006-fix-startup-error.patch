@@ -5,10 +5,10 @@ Subject: [PATCH] fix startup error
 
 
 diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
-index d35f650973cfbf6219f42b481c07855087407a0a..9c9b601a3f903bebb0dd1bda0e24745587229727 100644
+index d4c94ef519e30d89d1976fba5ed09c7b7cfffefb..fd3553bdc1c3cdbf6aa3dc00e0a4987f8eaa4fb8 100644
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -69,7 +69,6 @@ public class Main {
+@@ -70,7 +70,6 @@ public class Main {
      @DontObfuscate
      public static void main(final OptionSet optionSet) { // CraftBukkit - replaces main(String[] args)
          io.papermc.paper.util.LogManagerShutdownThread.hook(); // Paper - Improved watchdog support
@@ -17,7 +17,7 @@ index d35f650973cfbf6219f42b481c07855087407a0a..9c9b601a3f903bebb0dd1bda0e247455
          /* CraftBukkit start - Replace everything
          OptionParser optionParser = new OptionParser();
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index 7a5e30e521467d85084894f02f17ecc59f9e7c1b..c50af984dbd4aee15362ecd9a3abd9ad08590b26 100644
+index 9f202225d2b9c63d38c45b3a2eda43383f63603d..173491520a7b2dbdfb35a0e4361ec61182ded46e 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -154,6 +154,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -32,7 +32,7 @@ index 7a5e30e521467d85084894f02f17ecc59f9e7c1b..c50af984dbd4aee15362ecd9a3abd9ad
          LOGGER.info("Loading properties");
          DedicatedServerProperties properties = this.settings.getProperties();
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index d202b39d941230961e5dba09122c087da0164098..85dd26aed6acb9535f67569cfb85eecebb83ba5b 100644
+index 5f3ee846f7b63efba0c47dce17356f5b9d026d28..1a4e51b947251e4c3836e4de1560c7f11ba1cd40 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -113,7 +113,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
