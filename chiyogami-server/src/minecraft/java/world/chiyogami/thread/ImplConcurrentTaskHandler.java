@@ -3,6 +3,7 @@ package world.chiyogami.thread;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftWorld;
+import world.chiyogami.chiyogamilib.ChiyogamiLib;
 
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
@@ -14,7 +15,7 @@ public class ImplConcurrentTaskHandler extends ConcurrentTaskHandler {
     @Override
     protected <T> T runConcurrentTaskForWorldImpl(World targetWorld, Supplier<T> supplier) {
         // Main thread
-        if (Bukkit.isMainThread()) {
+        if (ChiyogamiLib.isMainThread()) {
             return supplier.get();
         }
         
