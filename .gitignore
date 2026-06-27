@@ -8,6 +8,12 @@ build
 
 /fork-server/build.gradle.kts
 /fork-server/src/minecraft
+/chiyogami-server/src/minecraft/java/*
+!/chiyogami-server/src/minecraft/java/world/
+/chiyogami-server/src/minecraft/java/world/*
+!/chiyogami-server/src/minecraft/java/world/chiyogami/
+!/chiyogami-server/src/minecraft/java/world/chiyogami/**
+/chiyogami-server/src/minecraft/resources
 /paper-server
 /fork-api/build.gradle.kts
 /paper-api
