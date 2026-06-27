@@ -30,6 +30,12 @@ public class WorldThread implements Runnable {
     
     private Thread currentThread = Thread.currentThread();
     
+    private final List<WorldThreadRunnable> scheduledRunnableList = new ArrayList<>();
+    
+    private final Map<WorldThreadRunnable, Long> scheduledDelayRunnableListMap = new HashMap<>();
+    
+    private final Map<WorldThreadRunnable, Long> scheduledTimerRunnableListMap = new HashMap<>();
+    
     private final ReentrantLock SCHEDULER_LOCK = new ReentrantLock(true);
     
     public AtomicInteger safeLockCount = new AtomicInteger();
@@ -52,6 +58,30 @@ public class WorldThread implements Runnable {
     
     public void addWorldTask(WorldTask<?> worldTask) {worldTasks.add(worldTask);}
     
+    public void resetAllPluginWorldTasks() {
+        scheduledRunnableList.clear();
+        scheduledDelayRunnableListMap.clear();
+        scheduledTimerRunnableListMap.clear();
+    }
+    
+    public void scheduleWorldThreadRunnable(WorldThreadRunnable runnable) {
+        try {
+            SCHEDULER_LOCK.lock();
+            if (runnable.getDelay() == 0) {
+                if (runnable.getPeriod() == 0) {
+                    scheduledRunnableList.add(runnable);
+                } else {
+                    scheduledTimerRunnableListMap.put(runnable, tick);
+                }
+            } else {
+                scheduledDelayRunnableListMap.put(runnable, runnable.getDelay() + tick);
+            }
+        } finally {
+            SCHEDULER_LOCK.unlock();
+        }
+    }
+    
+    
     @Override
     public void run() {
         tick++;
@@ -64,6 +94,50 @@ public class WorldThread implements Runnable {
             isProcessingWorldTick = true;
         } finally {
             LOCK.unlock();
+        }
+        
+        //Scheduler
+        try {
+            SCHEDULER_LOCK.lock();
+            for (Map.Entry<WorldThreadRunnable, Long> entry : scheduledDelayRunnableListMap.entrySet()) {
+                WorldThreadRunnable runnable = entry.getKey();
+                long tick = entry.getValue();
+                
+                if (this.tick == tick && !runnable.isCanceled()) {
+                    if (runnable.getPeriod() == 0) {
+                        scheduledRunnableList.add(runnable);
+                    } else {
+                        scheduledTimerRunnableListMap.put(runnable, tick);
+                    }
+                }
+            }
+            
+            for (WorldThreadRunnable runnable : scheduledRunnableList) {
+                try {
+                    runnable.run();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            for (Map.Entry<WorldThreadRunnable, Long> entry : scheduledTimerRunnableListMap.entrySet()) {
+                WorldThreadRunnable runnable = entry.getKey();
+                long tick = entry.getValue();
+                
+                if ((this.tick - tick) % runnable.getPeriod() == 0) {
+                    try {
+                        runnable.run();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            
+            scheduledDelayRunnableListMap.keySet().removeIf(WorldThreadRunnable::isCanceled);
+            scheduledTimerRunnableListMap.keySet().removeIf(WorldThreadRunnable::isCanceled);
+            scheduledRunnableList.clear();
+        } finally {
+            SCHEDULER_LOCK.unlock();
         }
         
         worldTickRunnable.run();

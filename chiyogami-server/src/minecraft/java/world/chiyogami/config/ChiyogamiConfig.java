@@ -3,6 +3,7 @@ package world.chiyogami.config;
 
 import io.papermc.paper.plugin.manager.PaperEventManager;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.SimplePluginManager;
 import world.chiyogami.log.ChiyogamiLogger;
 import world.chiyogami.thread.WorldThreadPool;
 

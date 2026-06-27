@@ -1,7 +1,6 @@
 package world.chiyogami.thread;
 
 import org.bukkit.Bukkit;
-import world.chiyogami.chiyogamilib.ChiyogamiLib;
 
 public class ImplWorldThreadLockHandler extends WorldThreadLockHandler {
     
@@ -10,7 +9,7 @@ public class ImplWorldThreadLockHandler extends WorldThreadLockHandler {
     @Override
     public void lock(WorldThreadSafeLock worldThreadSafeLock) {
         //Main thread
-        if (ChiyogamiLib.isMainThread()) {
+        if (Bukkit.isMainThread()) {
             return;
         }
         
@@ -28,7 +27,7 @@ public class ImplWorldThreadLockHandler extends WorldThreadLockHandler {
     @Override
     public void unlock(WorldThreadSafeLock worldThreadSafeLock) {
         //Main thread
-        if (ChiyogamiLib.isMainThread()) {
+        if (Bukkit.isMainThread()) {
             return;
         }
         
