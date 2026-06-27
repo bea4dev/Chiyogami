@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 29 Apr 2025 15:19:18 +0900
+Subject: [PATCH] chiyogami spark
+
+
+diff --git a/src/main/java/io/papermc/paper/SparksFly.java b/src/main/java/io/papermc/paper/SparksFly.java
+index 62e2d5704c348955bc8284dc2d54c933b7bcdd06..427d8406e646dd93550a565e9b0d43f02abdb654 100644
+--- a/src/main/java/io/papermc/paper/SparksFly.java
++++ b/src/main/java/io/papermc/paper/SparksFly.java
+@@ -85,6 +85,22 @@ public final class SparksFly {
+                 }
+             }
+         });
++        // Chiyogami start - spark with world thread
++        try {
++            java.lang.reflect.Field platform = me.lucko.spark.paper.PaperSparkPlugin.class.getDeclaredField("platform");
++            platform.setAccessible(true);
++            me.lucko.spark.paper.common.SparkPlatform platformObject = (me.lucko.spark.paper.common.SparkPlatform) platform.get(this.spark);
++            var configuration = platformObject.getConfiguration();
++            if (configuration.getString("backgroundProfilerThreadDumper", "default").equals("default")) {
++                String worldThreads = java.util.stream.IntStream.rangeClosed(0, 64)
++                        .mapToObj(i -> "WorldTickThread[" + i + "]")
++                        .collect(java.util.stream.Collectors.joining(","));
++                configuration.setString("backgroundProfilerThreadDumper", "Server thread," + worldThreads);
++            }
++            //platform.set(this.spark, new me.lucko.spark.paper.common.SparkPlatform((me.lucko.spark.paper.common.SparkPlugin) this.spark));
++        } catch (Exception e) {
++            SparksFly.this.logger.log(Level.SEVERE, "Failed to initialize Spark ChiyogamiThreadDumper", e);
++        }
+     }
+ 
+     public void executeMainThreadTasks() {
