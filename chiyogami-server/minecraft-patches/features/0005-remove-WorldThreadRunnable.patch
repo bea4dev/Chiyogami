@@ -1,0 +1,120 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 29 Apr 2025 16:05:43 +0900
+Subject: [PATCH] remove WorldThreadRunnable
+
+
+diff --git a/world/chiyogami/thread/WorldThread.java b/world/chiyogami/thread/WorldThread.java
+index 6ff13833c811b392194e8450b1b2f84562fc45ef..1a1492ff4c20bbf94b7d92f0a42216f9c3bceb9c 100644
+--- a/world/chiyogami/thread/WorldThread.java
++++ b/world/chiyogami/thread/WorldThread.java
+@@ -30,12 +30,6 @@ public class WorldThread implements Runnable {
+     
+     private Thread currentThread = Thread.currentThread();
+     
+-    private final List<WorldThreadRunnable> scheduledRunnableList = new ArrayList<>();
+-    
+-    private final Map<WorldThreadRunnable, Long> scheduledDelayRunnableListMap = new HashMap<>();
+-    
+-    private final Map<WorldThreadRunnable, Long> scheduledTimerRunnableListMap = new HashMap<>();
+-    
+     private final ReentrantLock SCHEDULER_LOCK = new ReentrantLock(true);
+     
+     public AtomicInteger safeLockCount = new AtomicInteger();
+@@ -58,30 +52,6 @@ public class WorldThread implements Runnable {
+     
+     public void addWorldTask(WorldTask<?> worldTask) {worldTasks.add(worldTask);}
+     
+-    public void resetAllPluginWorldTasks() {
+-        scheduledRunnableList.clear();
+-        scheduledDelayRunnableListMap.clear();
+-        scheduledTimerRunnableListMap.clear();
+-    }
+-    
+-    public void scheduleWorldThreadRunnable(WorldThreadRunnable runnable) {
+-        try {
+-            SCHEDULER_LOCK.lock();
+-            if (runnable.getDelay() == 0) {
+-                if (runnable.getPeriod() == 0) {
+-                    scheduledRunnableList.add(runnable);
+-                } else {
+-                    scheduledTimerRunnableListMap.put(runnable, tick);
+-                }
+-            } else {
+-                scheduledDelayRunnableListMap.put(runnable, runnable.getDelay() + tick);
+-            }
+-        } finally {
+-            SCHEDULER_LOCK.unlock();
+-        }
+-    }
+-    
+-    
+     @Override
+     public void run() {
+         tick++;
+@@ -96,50 +66,6 @@ public class WorldThread implements Runnable {
+             LOCK.unlock();
+         }
+         
+-        //Scheduler
+-        try {
+-            SCHEDULER_LOCK.lock();
+-            for (Map.Entry<WorldThreadRunnable, Long> entry : scheduledDelayRunnableListMap.entrySet()) {
+-                WorldThreadRunnable runnable = entry.getKey();
+-                long tick = entry.getValue();
+-                
+-                if (this.tick == tick && !runnable.isCanceled()) {
+-                    if (runnable.getPeriod() == 0) {
+-                        scheduledRunnableList.add(runnable);
+-                    } else {
+-                        scheduledTimerRunnableListMap.put(runnable, tick);
+-                    }
+-                }
+-            }
+-            
+-            for (WorldThreadRunnable runnable : scheduledRunnableList) {
+-                try {
+-                    runnable.run();
+-                } catch (Exception e) {
+-                    e.printStackTrace();
+-                }
+-            }
+-            
+-            for (Map.Entry<WorldThreadRunnable, Long> entry : scheduledTimerRunnableListMap.entrySet()) {
+-                WorldThreadRunnable runnable = entry.getKey();
+-                long tick = entry.getValue();
+-                
+-                if ((this.tick - tick) % runnable.getPeriod() == 0) {
+-                    try {
+-                        runnable.run();
+-                    } catch (Exception e) {
+-                        e.printStackTrace();
+-                    }
+-                }
+-            }
+-            
+-            scheduledDelayRunnableListMap.keySet().removeIf(WorldThreadRunnable::isCanceled);
+-            scheduledTimerRunnableListMap.keySet().removeIf(WorldThreadRunnable::isCanceled);
+-            scheduledRunnableList.clear();
+-        } finally {
+-            SCHEDULER_LOCK.unlock();
+-        }
+-        
+         worldTickRunnable.run();
+         
+         try {
+diff --git a/world/chiyogami/thread/WorldThreadPool.java b/world/chiyogami/thread/WorldThreadPool.java
+index ff14d4a3c73eb1f58615695b600b77371069b354..925b2f22818565e5d0b0c87b1a039993bda1883f 100644
+--- a/world/chiyogami/thread/WorldThreadPool.java
++++ b/world/chiyogami/thread/WorldThreadPool.java
+@@ -66,10 +66,6 @@ public class WorldThreadPool {
+     
+     public static WorldThread getWorldThreadFromCurrentThread() {return worldThreadHashMap.get(Thread.currentThread());}
+     
+-    public static void resetAllPluginWorldTasks() {
+-        worldThreadHashMap.values().forEach(WorldThread::resetAllPluginWorldTasks);
+-    }
+-    
+     
+     public static void shutdown(){if(executorService != null) executorService.shutdown();}
+     

@@ -66,10 +66,6 @@ public class WorldThreadPool {
     
     public static WorldThread getWorldThreadFromCurrentThread() {return worldThreadHashMap.get(Thread.currentThread());}
     
-    public static void resetAllPluginWorldTasks() {
-        worldThreadHashMap.values().forEach(WorldThread::resetAllPluginWorldTasks);
-    }
-    
     
     public static void shutdown(){if(executorService != null) executorService.shutdown();}
     
