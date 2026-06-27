@@ -40,10 +40,10 @@ index 7d6d53c8eb2c724bd265e8ad15b22d71e97e2a7b..7070d543e5e20e7ae092b4b7ce0b2d8d
              throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
          } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 71f7a8386d616420a0e86233e721f55ab62aae4d..4d683c70ef883fa072d3721b15a30c6561ef495b 100644
+index da49c8005592a154946750591ce082796f24dd3b..b52b569c30db2707d95143d9314c30d209376334 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -417,6 +417,7 @@ public final class CraftServer implements Server {
+@@ -411,6 +411,7 @@ public final class CraftServer implements Server {
          this.serverLinks = new CraftServerLinks(console);
  
          Bukkit.setServer(this);
