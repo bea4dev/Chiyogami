@@ -4,11 +4,11 @@
      minecraftVersion = providers.gradleProperty("mcVersion")
      gitFilePatches = false
  
-+    val fork = forks.register("fork") {
++    val fork = forks.register("chiyogami") {
 +        upstream.patchDir("paperServer") {
 +            upstreamPath = "paper-server"
 +            excludes = setOf("src/minecraft", "patches", "build.gradle.kts")
-+            patchesDir = rootDirectory.dir("fork-server/paper-patches")
++            patchesDir = rootDirectory.dir("chiyogami-server/paper-patches")
 +            outputDir = rootDirectory.dir("paper-server")
 +        }
 +    }
@@ -45,7 +45,7 @@
  
  dependencies {
 -    implementation(project(":paper-api"))
-+    implementation(project(":fork-api"))
++    implementation(project(":chiyogami-api"))
      implementation("ca.spottedleaf:concurrentutil:0.0.8")
      implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
      implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
