@@ -152,6 +152,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":chiyogami-api"))
+    implementation("com.github.bea4dev:ChiyogamiLib:793983cef1")
     implementation("ca.spottedleaf:concurrentutil:0.0.8")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
@@ -210,6 +211,10 @@ dependencies {
     implementation("me.lucko:spark-paper:1.10.152")
 }
 
+repositories {
+    maven { url = uri("https://jitpack.io") }
+}
+
 tasks.jar {
     manifest {
         val git = Git(rootProject.layout.projectDirectory.path)
@@ -222,14 +227,14 @@ tasks.jar {
         val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
         attributes(
             "Main-Class" to "org.bukkit.craftbukkit.Main",
-            "Implementation-Title" to "Paper",
+            "Implementation-Title" to "Chiyogami",
             "Implementation-Version" to implementationVersion,
             "Implementation-Vendor" to date,
-            "Specification-Title" to "Paper",
+            "Specification-Title" to "Chiyogami",
             "Specification-Version" to project.version,
-            "Specification-Vendor" to "Paper Team",
-            "Brand-Id" to "papermc:paper",
-            "Brand-Name" to "Paper",
+            "Specification-Vendor" to "bea4dev",
+            "Brand-Id" to "bea4dev:chiyogami",
+            "Brand-Name" to "Chiyogami",
             "Build-Number" to (build ?: ""),
             "Build-Time" to buildTime.toString(),
             "Git-Branch" to gitBranch,
