@@ -25,4 +25,4 @@ jobs:
       - name: Apply Patches
         run: ./gradlew applyAllPatches --stacktrace
       - name: Build
-        run: ./gradlew build
+        run: ./gradlew createBundlerJar
