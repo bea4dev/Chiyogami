@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Sun, 20 Jul 2025 17:02:43 +0900
+Subject: [PATCH] thread safe teleport
+
+
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 74a2b3dcd303b25e9c26f3e4d4220b390b32f1d5..d6ac6aed97fb09b564aa64d75af7c80f974d7d24 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -4102,6 +4102,7 @@ public abstract class Entity
+     }
+ 
+     private @Nullable Entity teleportCrossDimension(final ServerLevel oldLevel, final ServerLevel newLevel, final TeleportTransition transition) {
++        java.util.function.Supplier<Entity> teleportTask = () -> { // Chiyogami - thread safe teleport
+         List<Entity> oldPassengers = this.getPassengers();
+         List<Entity> newPassengers = new ArrayList<>(oldPassengers.size());
+         this.ejectPassengers();
+@@ -4140,6 +4141,10 @@ public abstract class Entity
+         this.teleportSpectators(transition, oldLevel);
+         profiler.pop();
+         return newEntity;
++        // Chiyogami start - thread safe teleport
++        };
++        return this.level().worldThread.runWorldTaskThreadSafely(newLevel.worldThread, new world.chiyogami.thread.WorldTask<>(teleportTask), "NMS Entity teleport");
++        // Chiyogami end
+     }
+ 
+     protected void teleportSpectators(final TeleportTransition transition, final ServerLevel oldLevel) {
