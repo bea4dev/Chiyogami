@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 29 Apr 2025 17:03:13 +0900
+Subject: [PATCH] fix startup error
+
+
+diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
+index ee6b888a089d5b4036932a0fdc6900e9bfefe01b..38b50aaf6473c7692d3372ad7b956355be989bd4 100644
+--- a/net/minecraft/server/Main.java
++++ b/net/minecraft/server/Main.java
+@@ -65,7 +65,6 @@ public class Main {
+     @SuppressForbidden(reason = "System.out needed before bootstrap")
+     public static void main(final OptionSet options) { // CraftBukkit - replaces main(String[] args)
+         io.papermc.paper.log.LogManagerShutdownThread.hook(); // Paper - Improved watchdog support
+-        world.chiyogami.thread.ChiyogamiServerThreadProvider.init(); // Chiyogami - add ChiyogamiLib
+         SharedConstants.tryDetectVersion();
+         /* CraftBukkit start - Replace everything
+         OptionParser parser = new OptionParser();
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index a4123b94f4470d85372afcd7361b5297161cab5a..ffef195412f1b0252fb3820cb232f48c210d4ec4 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -261,6 +261,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         world.chiyogami.config.ChiyogamiConfig.load();
+         world.chiyogami.thread.WorldThreadPool.init();
+         // Chiyogami end
++        // Chiyogami start - thread api
++        new world.chiyogami.thread.ImplConcurrentTaskHandler();
++        new world.chiyogami.thread.ImplWorldThreadLockHandler();
++        // Chiyogami end
+ 
+         LOGGER.info("Loading properties");
+         DedicatedServerProperties properties = this.settings.getProperties();
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 394aa2dfa6b40aa4343777b3d1568d4f903e3895..87f1a111a31d3c927cf4e87cb838d5537efb128b 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -125,7 +125,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     private boolean tickingBlockEntities;
+     // Chiyogami start - world threading
+     public Thread thread;
+-    public WorldThread worldThread;
++    public final WorldThread worldThread = new WorldThread(this);
+     // Chiyogami end
+     private final boolean isDebug;
+     private int skyDarken;

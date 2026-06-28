@@ -5,10 +5,10 @@ Subject: [PATCH] config
 
 
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index eb06d8f012684845146429832e977e6c1ddcd62b..36bd5e0c903d5c752e559295586db822df4f35b2 100644
+index 6a5d404e570ede5d49c82bccc30aa75ddd58983b..a4123b94f4470d85372afcd7361b5297161cab5a 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -240,6 +240,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -257,6 +257,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              LOGGER.warn("****************************");
          }
          // Paper end - detect running as root
