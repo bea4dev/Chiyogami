@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 29 Apr 2025 14:46:35 +0900
+Subject: [PATCH] config
+
+
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index eb06d8f012684845146429832e977e6c1ddcd62b..36bd5e0c903d5c752e559295586db822df4f35b2 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -240,6 +240,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             LOGGER.warn("****************************");
+         }
+         // Paper end - detect running as root
++        // Chiyogami start - config
++        world.chiyogami.config.ChiyogamiConfig.load();
++        world.chiyogami.thread.WorldThreadPool.init();
++        // Chiyogami end
+ 
+         LOGGER.info("Loading properties");
+         DedicatedServerProperties properties = this.settings.getProperties();
+diff --git a/world/chiyogami/config/ChiyogamiConfig.java b/world/chiyogami/config/ChiyogamiConfig.java
+index 363898ae9a5eba416da181077fdceaee194c1bd5..844f2b9dcfa38841832e6d4199d9d2e3deb8dcd6 100644
+--- a/world/chiyogami/config/ChiyogamiConfig.java
++++ b/world/chiyogami/config/ChiyogamiConfig.java
+@@ -3,7 +3,6 @@ package world.chiyogami.config;
+ 
+ import io.papermc.paper.plugin.manager.PaperEventManager;
+ import org.bukkit.configuration.file.YamlConfiguration;
+-import org.bukkit.plugin.SimplePluginManager;
+ import world.chiyogami.log.ChiyogamiLogger;
+ import world.chiyogami.thread.WorldThreadPool;
+ 
