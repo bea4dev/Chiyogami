@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bea4dev <bea0224@outlook.jp>
+Date: Tue, 29 Apr 2025 14:46:35 +0900
+Subject: [PATCH] config
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..7d6d53c8eb2c724bd265e8ad15b22d71e97e2a7b 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -26,7 +26,8 @@ import java.util.Map;
+ import java.util.Set;
+ import java.util.logging.Level;
+ 
+-class PaperEventManager {
++public class PaperEventManager {
++    public static boolean synchronizedEvent; // Chiyogami - config
+ 
+     private final Server server;
+ 
