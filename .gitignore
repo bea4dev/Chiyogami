@@ -6,11 +6,9 @@ build
 
 /run
 
-/fork-server/build.gradle.kts
-/fork-server/src/minecraft
 /paper-server
-/fork-api/build.gradle.kts
 /paper-api
 /paper-api-generator
+/chiyogami-server/src/minecraft
 
 .idea/

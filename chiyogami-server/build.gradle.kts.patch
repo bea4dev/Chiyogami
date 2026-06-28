@@ -4,21 +4,21 @@
      minecraftVersion = providers.gradleProperty("mcVersion")
      gitFilePatches = false
  
-+    val fork = forks.register("fork") {
++    val fork = forks.register("chiyogami") {
 +        upstream.patchDir("paperServer") {
 +            upstreamPath = "paper-server"
 +            excludes = setOf("src/minecraft", "patches", "build.gradle.kts")
-+            patchesDir = rootDirectory.dir("fork-server/paper-patches")
++            patchesDir = rootDirectory.dir("chiyogami-server/paper-patches")
 +            outputDir = rootDirectory.dir("paper-server")
 +        }
 +    }
 +
 +    activeFork = fork
 +
-     spigot {
-         enabled = true
-         buildDataRef = "17f77cee7117ab9d6175f088ae8962bfd04e61a9"
-@@ -104,7 +_,20 @@
+     updatingMinecraft {
+         // oldPaperCommit = "711c5de2b05df39b72c44ff54e9f9381f8d153cb"
+     }
+@@ -89,7 +_,20 @@
      }
  }
  
@@ -40,16 +40,36 @@
  configurations.named(log4jPlugins.compileClasspathConfigurationName) {
      extendsFrom(configurations.compileClasspath.get())
  }
-@@ -127,7 +_,7 @@
+@@ -111,7 +_,7 @@
  }
  
  dependencies {
 -    implementation(project(":paper-api"))
-+    implementation(project(":fork-api"))
-     implementation("ca.spottedleaf:concurrentutil:0.0.8")
++    implementation(project(":chiyogami-api"))
+     implementation("ca.spottedleaf:concurrentutil:0.0.10")
      implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
      implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
-@@ -264,7 +_,7 @@
+@@ -174,14 +_,14 @@
+         val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
+         attributes(
+             "Main-Class" to "org.bukkit.craftbukkit.Main",
+-            "Implementation-Title" to "Paper",
++            "Implementation-Title" to "Chiyogami",
+             "Implementation-Version" to implementationVersion,
+             "Implementation-Vendor" to date,
+-            "Specification-Title" to "Paper",
++            "Specification-Title" to "Chiyogami",
+             "Specification-Version" to project.version,
+-            "Specification-Vendor" to "Paper Team",
+-            "Brand-Id" to "papermc:paper",
+-            "Brand-Name" to "Paper",
++            "Specification-Vendor" to "bea4dev",
++            "Brand-Id" to "bea4dev:chiyogami",
++            "Brand-Name" to "Chiyogami",
+             "Build-Number" to (build ?: ""),
+             "Build-Time" to buildTime.toString(),
+             "Git-Branch" to gitBranch,
+@@ -240,7 +_,7 @@
      jvmArgumentProviders.add(provider)
  }
  
