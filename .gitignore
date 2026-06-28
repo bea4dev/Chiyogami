@@ -9,6 +9,7 @@ build
 /paper-server
 /paper-api
 /paper-api-generator
-/chiyogami-server/src/minecraft
+/chiyogami-server/src/minecraft/java
+/chiyogami-server/src/minecraft/resources
 
 .idea/

@@ -134,6 +134,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":chiyogami-api"))
+    implementation("com.github.bea4dev:ChiyogamiLib:793983cef1")
     implementation("ca.spottedleaf:concurrentutil:0.0.10")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
@@ -181,6 +182,10 @@ dependencies {
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
     implementation("me.lucko:spark-paper:1.10.152")
+}
+
+repositories {
+    maven { url = uri("https://jitpack.io") }
 }
 
 tasks.jar {
